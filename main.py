@@ -64,27 +64,39 @@ def print_game_line(game):
         print(f"- {game['title']} ({game['platform']}) | {game['status']} | {game['hours_played']:g} ore")
 
 
+def is_duplicate_game(games, title, platform):
+    for game in games:
+        same_title = game["title"].lower() == title.lower()
+        same_platform = game["platform"].lower() == platform.lower()
+        if same_title and same_platform:
+            return True
+    return False
+
+
 while True:
     print_menu()
     choice = input("Scegli voce del menu: ")
     if choice == "1":
         title = ask_non_empty_text("Inserisci il titolo del gioco: ")
         platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
-        status = ask_status()
-        if status == "backlog":
-            hours_played = 0.0
-        elif status == "completed":
-            hours_played = ask_hours_played(allow_zero=False)
+        if is_duplicate_game(games, title, platform):
+            print(f"'{title}' su {platform} è già presente in libreria.")
         else:
-            hours_played = ask_hours_played(allow_zero=True)
-        game = {
-            "title": title,
-            "platform": platform,
-            "status": status,
-            "hours_played": hours_played,
-        }
-        games.append(game)
-        print(f"'{title}' aggiunto alla libreria. ")
+            status = ask_status()
+            if status == "backlog":
+                hours_played = 0.0
+            elif status == "completed":
+                hours_played = ask_hours_played(allow_zero=False)
+            else:
+                hours_played = ask_hours_played(allow_zero=True)
+            game = {
+                "title": title,
+                "platform": platform,
+                "status": status,
+                "hours_played": hours_played,
+            }
+            games.append(game)
+            print(f"'{title}' aggiunto alla libreria. ")
     elif choice == "2":
         print_library(games)
     elif choice == "3":
