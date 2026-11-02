@@ -30,6 +30,21 @@ def ask_non_empty_text(prompt):
             print("Il campo non può essere vuoto.")
 
 
+def ask_hours_played():
+    while True:
+        hours_text = input("Ore giocate: ")
+        try:
+            hours_played = float(hours_text)
+            if hours_played >= 0:
+                return hours_played
+            else:
+                print("Numero non accettato, le ore non possono essere negative")
+        except ValueError:
+            print("Inserisci un valore valido (es. 12.5)")
+
+
+games = []
+
 while True:
     print_menu()
     choice = input("Scegli voce del menu: ")
@@ -37,9 +52,17 @@ while True:
         title = ask_non_empty_text("Inserisci il titolo del gioco: ")
         platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
         status = ask_status()
-        print(f"Hai registrato [{title}], giocato su [{platform}], stato: [{status}].")
+        hours_played = ask_hours_played()
+        game = {
+            "title": title,
+            "platform": platform,
+            "status": status,
+            "hours_played": hours_played,
+        }
+        games.append(game)
     elif choice == "2":
-        print("Funzionalità in arrivo")
+        for game in games:
+            print(f"- {game}")
     elif choice == "3":
         print("Torna presto!")
         break
