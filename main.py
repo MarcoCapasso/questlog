@@ -21,12 +21,23 @@ def ask_status():
             print("Inserisci uno stato valido.")
 
 
+def ask_non_empty_text(prompt):
+    while True:
+        answer = input(prompt).strip()
+        if answer != "":
+            return answer
+        else:
+            print("Il campo non può essere vuoto.")
+
+
 while True:
     print_menu()
     choice = input("Scegli voce del menu: ")
     if choice == "1":
+        title = ask_non_empty_text("Inserisci il titolo del gioco: ")
+        platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
         status = ask_status()
-        print(f"Stato inserito: {status}")
+        print(f"Hai registrato [{title}], giocato su [{platform}], stato: [{status}].")
     elif choice == "2":
         print("Funzionalità in arrivo")
     elif choice == "3":
