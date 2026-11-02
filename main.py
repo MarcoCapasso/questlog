@@ -9,11 +9,24 @@ def print_menu():
     print("3. Esci")
 
 
+def ask_status():
+    print()
+    for status in ALLOWED_STATUSES:
+        print(f"- {status}")
+    while True:
+        game_status = input("Inserisci stato del gioco: ").strip().lower()
+        if game_status in ALLOWED_STATUSES:
+            return game_status
+        else:
+            print("Inserisci uno stato valido.")
+
+
 while True:
     print_menu()
     choice = input("Scegli voce del menu: ")
     if choice == "1":
-        print("Funzionalità in arrivo")
+        status = ask_status()
+        print(f"Stato inserito: {status}")
     elif choice == "2":
         print("Funzionalità in arrivo")
     elif choice == "3":
