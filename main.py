@@ -30,17 +30,19 @@ def ask_non_empty_text(prompt):
             print("Il campo non può essere vuoto.")
 
 
-def ask_hours_played():
+def ask_hours_played(allow_zero=True):
     while True:
         hours_text = input("Ore giocate: ")
         try:
             hours_played = float(hours_text)
-            if hours_played >= 0:
-                return hours_played
+            if hours_played < 0:
+                print("Le ore non possono essere inferiori a 0.")
+            elif hours_played == 0 and not allow_zero:
+                print("Le ore devono essere maggiori di 0")
             else:
-                print("Numero non accettato, le ore non possono essere negative")
+                return hours_played
         except ValueError:
-            print("Inserisci un valore valido (es. 12.5)")
+            print("Inserisci un valore valido. (es. 12.5)")
 
 
 games = []
@@ -54,8 +56,10 @@ while True:
         status = ask_status()
         if status == "backlog":
             hours_played = 0.0
+        elif status == "completed":
+            hours_played = ask_hours_played(allow_zero=False)
         else:
-            hours_played = ask_hours_played()
+            hours_played = ask_hours_played(allow_zero=True)
         game = {
             "title": title,
             "platform": platform,
