@@ -52,7 +52,10 @@ while True:
         title = ask_non_empty_text("Inserisci il titolo del gioco: ")
         platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
         status = ask_status()
-        hours_played = ask_hours_played()
+        if status == "backlog":
+            hours_played = 0.0
+        else:
+            hours_played = ask_hours_played()
         game = {
             "title": title,
             "platform": platform,
