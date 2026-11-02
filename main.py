@@ -1,6 +1,9 @@
 ALLOWED_STATUSES = ["backlog", "playing", "completed", "dropped"]
 
 
+games = []
+
+
 def print_menu():
     print()
     print("--- Questlog ---")
@@ -45,7 +48,21 @@ def ask_hours_played(allow_zero=True):
             print("Inserisci un valore valido. (es. 12.5)")
 
 
-games = []
+def print_library(games):
+    if len(games) == 0:
+        print("Libreria vuota, aggiungi prima qualche gioco.")
+    else:
+        print("--- Libreria ---")
+        for game in games:
+            print_game_line(game)
+
+
+def print_game_line(game):
+    if game["status"] == "backlog":
+        print(f"- {game['title']} ({game['platform']}) | {game['status']}")
+    else:
+        print(f"- {game['title']} ({game['platform']}) | {game['status']} | {game['hours_played']:g} ore")
+
 
 while True:
     print_menu()
@@ -67,9 +84,9 @@ while True:
             "hours_played": hours_played,
         }
         games.append(game)
+        print(f"'{title}' aggiunto alla libreria. ")
     elif choice == "2":
-        for game in games:
-            print(f"- {game}")
+        print_library(games)
     elif choice == "3":
         print("Torna presto!")
         break
