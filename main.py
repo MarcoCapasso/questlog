@@ -53,15 +53,15 @@ def print_library(games):
         print("Libreria vuota, aggiungi prima qualche gioco.")
     else:
         print("--- Libreria ---")
-        for game in games:
-            print_game_line(game)
+        for position, game in enumerate(games, start=1):
+            print(f"{position}. {format_game_line(game)}")
 
 
-def print_game_line(game):
+def format_game_line(game):
     if game["status"] == "backlog":
-        print(f"- {game['title']} ({game['platform']}) | {game['status']}")
+        return f"{game['title']} ({game['platform']}) | {game['status']}"
     else:
-        print(f"- {game['title']} ({game['platform']}) | {game['status']} | {game['hours_played']:g} ore")
+        return f"{game['title']} ({game['platform']}) | {game['status']} | {game['hours_played']:g} ore"
 
 
 def is_duplicate_game(games, title, platform):
