@@ -55,6 +55,7 @@ def ask_non_empty_text(prompt):
             print("Il campo non può essere vuoto.")
 
 
+# Valida uno stato inserito
 def ask_status():
     print()
     print("--Seleziona uno stato--")
@@ -68,6 +69,7 @@ def ask_status():
             print("Inserisci uno stato valido.")
 
 
+# Valida le ore di gioco
 def ask_hours_played(allow_zero=True):
     while True:
         hours_text = input("Ore giocate: ")
@@ -95,6 +97,14 @@ def ask_game_index(games):
                 print(f"Numero non valido, inserisci un numero compreso tra 1 e {len(games)}")
         except ValueError:
             print("Inserisci un numero")
+
+
+def select_game_index(games):
+    print_library(games)
+    if len(games) == 0:
+        return None
+    else:
+        return ask_game_index(games)
 
 
 def ask_confirmation(prompt):
@@ -132,13 +142,10 @@ def is_duplicate_game(games, title, platform, ignore_index=None):
 while True:
     print_menu()
     choice = input("Scegli voce del menu: ")
-    # Aggiungi gioco
     if choice == "1":
         add_game(games)
-    # Mostra libreria
     elif choice == "2":
         print_library(games)
-    # Modifica gioco
     elif choice == "3":
         print_library(games)
         if len(games) != 0:
@@ -205,9 +212,8 @@ while True:
 
     # Elimina Gioco
     elif choice == "4":
-        print_library(games)
-        if len(games) != 0:
-            game_index = ask_game_index(games)
+        game_index = select_game_index(games)
+        if game_index is not None:
             selected_game = games[game_index]
             confirm_delete = ask_confirmation(f"Sei sicuro di voler eliminare '{format_game_line(selected_game)}'? (s/n) ")
             if confirm_delete:
