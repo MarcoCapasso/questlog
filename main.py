@@ -16,6 +16,7 @@ def print_menu():
 
 def print_edit_menu():
     print()
+    print("--- Modifica ---")
     print("1. Titolo")
     print("2. Piattaforma")
     print("3. Stato")
@@ -34,7 +35,7 @@ def add_game(games):
         elif status == "completed":
             hours_played = ask_hours_played(allow_zero=False)
         else:
-            hours_played = ask_hours_played(allow_zero=True)
+            hours_played = ask_hours_played()
         game = {
             "title": title,
             "platform": platform,
@@ -42,10 +43,98 @@ def add_game(games):
             "hours_played": hours_played,
         }
         games.append(game)
-        print(f"'{title}' aggiunto alla libreria. ")
+        print(f"'{title}' aggiunto alla libreria.")
 
 
-# Controlla che il testo inserito non sia vuoto e rimuove gli spazi superflui ai bordi
+def delete_game(games):
+    game_index = select_game_index(games)
+    if game_index is not None:
+        selected_game = games[game_index]
+        confirm_delete = ask_confirmation(f"Sei sicuro di voler eliminare '{format_game_line(selected_game)}'? (s/n) ")
+        if confirm_delete:
+            games.pop(game_index)
+            print(f"'{selected_game['title']}' eliminato dalla libreria.")
+        else:
+            print("Nessun gioco eliminato.")
+
+
+def edit_game(games):
+    game_index = select_game_index(games)
+    if game_index is not None:
+        selected_game = games[game_index]
+        print(f"Hai selezionato '{selected_game['title']}'.")
+        print_edit_menu()
+        field_choice = ask_non_empty_text("Quale campo vuoi modificare? ")
+        if field_choice == "1":
+            edit_game_title(games, game_index)
+        elif field_choice == "2":
+            edit_game_platform(games, game_index)
+        elif field_choice == "3":
+            edit_game_status(selected_game)
+        elif field_choice == "4":
+            edit_game_hours(selected_game)
+        else:
+            print("Inserisci una scelta valida.")
+
+
+def edit_game_title(games, game_index):
+    selected_game = games[game_index]
+    new_title = ask_non_empty_text("Inserisci il nuovo titolo: ")
+    if is_duplicate_game(games, new_title, selected_game["platform"], ignore_index=game_index):
+        print(f"'{new_title}' su {selected_game['platform']} è già presente in libreria.")
+    else:
+        selected_game["title"] = new_title
+        print(f"Titolo aggiornato in '{new_title}'.")
+
+
+def edit_game_platform(games, game_index):
+    selected_game = games[game_index]
+    new_platform = ask_non_empty_text("Inserisci la nuova piattaforma: ")
+    if is_duplicate_game(games, selected_game["title"], new_platform, ignore_index=game_index):
+        print(f"'{selected_game['title']}' su {new_platform} è già presente in libreria.")
+    else:
+        selected_game["platform"] = new_platform
+        print(f"Piattaforma aggiornata in '{new_platform}'.")
+
+
+def edit_game_status(game):
+    new_status = ask_status()
+    if new_status == "backlog":
+        if game["hours_played"] > 0:
+            print("Un gioco iniziato non può tornare in backlog.")
+        else:
+            game["status"] = new_status
+            print(f"Stato aggiornato in '{new_status}'.")
+    elif new_status == "completed":
+        if game["hours_played"] > 0:
+            current_hours = game["hours_played"]
+            if ask_confirmation(f"Vuoi aggiornare le ore? Attuali: {current_hours:g} (s/n) "):
+                game["hours_played"] = ask_hours_played(allow_zero=False)
+        else:
+            game["hours_played"] = ask_hours_played(allow_zero=False)
+        game["status"] = new_status
+        print(f"Stato aggiornato in '{new_status}', ore: {game['hours_played']:g}.")
+    else:
+        game["status"] = new_status
+        print(f"Stato aggiornato in '{new_status}'.")
+
+
+def edit_game_hours(game):
+    if game["status"] == "backlog":
+        if ask_confirmation("Il gioco passerà da 'backlog' a 'playing'. Confermi? (s/n) "):
+            game["hours_played"] = ask_hours_played(allow_zero=False)
+            game["status"] = "playing"
+            print(f"Stato aggiornato in 'playing', ore: {game['hours_played']:g}.")
+        else:
+            print("Nessuna modifica effettuata.")
+    elif game["status"] == "completed":
+        game["hours_played"] = ask_hours_played(allow_zero=False)
+        print(f"Ore aggiornate: {game['hours_played']:g}.")
+    else:
+        game["hours_played"] = ask_hours_played()
+        print(f"Ore aggiornate: {game['hours_played']:g}.")
+
+
 def ask_non_empty_text(prompt):
     while True:
         answer = input(prompt).strip()
@@ -55,10 +144,9 @@ def ask_non_empty_text(prompt):
             print("Il campo non può essere vuoto.")
 
 
-# Valida uno stato inserito
 def ask_status():
     print()
-    print("--Seleziona uno stato--")
+    print("--- Seleziona uno stato ---")
     for status in ALLOWED_STATUSES:
         print(f"- {status}")
     while True:
@@ -69,7 +157,6 @@ def ask_status():
             print("Inserisci uno stato valido.")
 
 
-# Valida le ore di gioco
 def ask_hours_played(allow_zero=True):
     while True:
         hours_text = input("Ore giocate: ")
@@ -78,11 +165,11 @@ def ask_hours_played(allow_zero=True):
             if hours_played < 0:
                 print("Le ore non possono essere inferiori a 0.")
             elif hours_played == 0 and not allow_zero:
-                print("Le ore devono essere maggiori di 0")
+                print("Le ore devono essere maggiori di 0.")
             else:
                 return hours_played
         except ValueError:
-            print("Inserisci un valore valido. (es. 12.5)")
+            print("Inserisci un valore valido (es. 12.5).")
 
 
 def ask_game_index(games):
@@ -94,9 +181,9 @@ def ask_game_index(games):
                 index = game_number - 1
                 return index
             else:
-                print(f"Numero non valido, inserisci un numero compreso tra 1 e {len(games)}")
+                print(f"Numero non valido, inserisci un numero compreso tra 1 e {len(games)}.")
         except ValueError:
-            print("Inserisci un numero")
+            print("Inserisci un numero.")
 
 
 def select_game_index(games):
@@ -144,88 +231,19 @@ while True:
     choice = input("Scegli voce del menu: ")
     if choice == "1":
         add_game(games)
+
     elif choice == "2":
         print_library(games)
+
     elif choice == "3":
-        print_library(games)
-        if len(games) != 0:
-            game_index = ask_game_index(games)
-            selected_game = games[game_index]
-            print(f"Hai selezionato '{selected_game['title']}'")
-            print_edit_menu()
-            field_choice = ask_non_empty_text("Quale campo vuoi modificare? ")
-            # Titolo
-            if field_choice == "1":
-                new_title = ask_non_empty_text("Inserisci il nuovo titolo: ")
-                if is_duplicate_game(games, new_title, selected_game['platform'], ignore_index=game_index):
-                    print(f"'{new_title}' su {selected_game['platform']} è già presente in libreria.")
-                else:
-                    selected_game["title"] = new_title
-                    print(f"Titolo aggiornato in '{selected_game['title']}'")
-            # Piattaforma
-            elif field_choice == "2":
-                new_platform = ask_non_empty_text("Inserisci la nuova piattaforma: ")
-                if is_duplicate_game(games, selected_game['title'], new_platform, ignore_index=game_index):
-                    print(f"'{selected_game['title']}' su {new_platform} è già presente in libreria.")
-                else:
-                    selected_game["platform"] = new_platform
-                    print(f"Piattaforma aggiornata in '{selected_game['platform']}'")
-            # Stato
-            elif field_choice == "3":
-                new_status = ask_status()
-                if new_status == "backlog":
-                    if selected_game['hours_played'] > 0:
-                        print("Un gioco iniziato non può tornare in backlog")
-                    else:
-                        selected_game["status"] = new_status
-                        print(f"Stato aggiornato in {selected_game['status']}")
-                elif new_status == "completed":
-                    if selected_game["hours_played"] > 0:
-                        current_hours = selected_game["hours_played"]
-                        if ask_confirmation(f"Vuoi aggiornare le ore? Attuali: {current_hours:g} (s/n) "):
-                            selected_game["hours_played"] = ask_hours_played(allow_zero=False)
-                    else:
-                        selected_game["hours_played"] = ask_hours_played(allow_zero=False)
-                    selected_game["status"] = new_status
-                    print(f"Stato aggiornato in '{new_status}', ore: {selected_game['hours_played']:g}")
-                else:
-                    selected_game["status"] = new_status
-                    print(f"Stato aggiornato in {selected_game['status']}")
+        edit_game(games)
 
-            # Ore di gioco
-            elif field_choice == "4":
-                if selected_game['status'] == "backlog":
-                    if ask_confirmation(f"Vuoi aggiornare lo stato attuale da '{selected_game['status']}' a 'playing'? (s/n) "):
-                        selected_game['status'] = "playing"
-                        selected_game['hours_played'] = ask_hours_played(allow_zero=False)
-                        print(f"Stato aggiornato in '{selected_game['status']}', ore: {selected_game['hours_played']:g}")
-                    else:
-                        print("Nessuna modifica effettuata.")
-                elif selected_game['status'] == "completed":
-                    selected_game['hours_played'] = ask_hours_played(allow_zero=False)
-                    print(f"Ore aggiornate: {selected_game['hours_played']:g}")
-                else:
-                    selected_game['hours_played'] = ask_hours_played(allow_zero=True)
-                    print(f"Ore aggiornate: {selected_game['hours_played']:g}")
-            else:
-                print("Inserisci una scelta valida.")
-
-    # Elimina Gioco
     elif choice == "4":
-        game_index = select_game_index(games)
-        if game_index is not None:
-            selected_game = games[game_index]
-            confirm_delete = ask_confirmation(f"Sei sicuro di voler eliminare '{format_game_line(selected_game)}'? (s/n) ")
-            if confirm_delete:
-                games.pop(game_index)
-                print(f"'{selected_game['title']}' eliminato dalla libreria")
-            else:
-                print("Nessun gioco eliminato.")
+        delete_game(games)
 
-    # Esci
     elif choice == "5":
         print("Torna presto!")
         break
 
     else:
-        print("Inserisci una scelta valida")
+        print("Inserisci una scelta valida.")
