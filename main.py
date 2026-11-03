@@ -22,6 +22,30 @@ def print_edit_menu():
     print("4. Ore")
 
 
+def add_game(games):
+    title = ask_non_empty_text("Inserisci il titolo del gioco: ")
+    platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
+    if is_duplicate_game(games, title, platform):
+        print(f"'{title}' su {platform} è già presente in libreria.")
+    else:
+        status = ask_status()
+        if status == "backlog":
+            hours_played = 0.0
+        elif status == "completed":
+            hours_played = ask_hours_played(allow_zero=False)
+        else:
+            hours_played = ask_hours_played(allow_zero=True)
+        game = {
+            "title": title,
+            "platform": platform,
+            "status": status,
+            "hours_played": hours_played,
+        }
+        games.append(game)
+        print(f"'{title}' aggiunto alla libreria. ")
+
+
+# Controlla che il testo inserito non sia vuoto e rimuove gli spazi superflui ai bordi
 def ask_non_empty_text(prompt):
     while True:
         answer = input(prompt).strip()
@@ -110,30 +134,10 @@ while True:
     choice = input("Scegli voce del menu: ")
     # Aggiungi gioco
     if choice == "1":
-        title = ask_non_empty_text("Inserisci il titolo del gioco: ")
-        platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
-        if is_duplicate_game(games, title, platform):
-            print(f"'{title}' su {platform} è già presente in libreria.")
-        else:
-            status = ask_status()
-            if status == "backlog":
-                hours_played = 0.0
-            elif status == "completed":
-                hours_played = ask_hours_played(allow_zero=False)
-            else:
-                hours_played = ask_hours_played(allow_zero=True)
-            game = {
-                "title": title,
-                "platform": platform,
-                "status": status,
-                "hours_played": hours_played,
-            }
-            games.append(game)
-            print(f"'{title}' aggiunto alla libreria. ")
+        add_game(games)
     # Mostra libreria
     elif choice == "2":
         print_library(games)
-
     # Modifica gioco
     elif choice == "3":
         print_library(games)
