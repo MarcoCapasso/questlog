@@ -130,7 +130,7 @@ while True:
             }
             games.append(game)
             print(f"'{title}' aggiunto alla libreria. ")
-    # Mostra liberia
+    # Mostra libreria
     elif choice == "2":
         print_library(games)
 
@@ -183,8 +183,19 @@ while True:
 
             # Ore di gioco
             elif field_choice == "4":
-                print("Work in Progress")
-
+                if selected_game['status'] == "backlog":
+                    if ask_confirmation(f"Vuoi aggiornare lo stato attuale da '{selected_game['status']}' a 'playing'? (s/n) "):
+                        selected_game['status'] = "playing"
+                        selected_game['hours_played'] = ask_hours_played(allow_zero=False)
+                        print(f"Stato aggiornato in '{selected_game['status']}', ore: {selected_game['hours_played']:g}")
+                    else:
+                        print("Nessuna modifica effettuata.")
+                elif selected_game['status'] == "completed":
+                    selected_game['hours_played'] = ask_hours_played(allow_zero=False)
+                    print(f"Ore aggiornate: {selected_game['hours_played']:g}")
+                else:
+                    selected_game['hours_played'] = ask_hours_played(allow_zero=True)
+                    print(f"Ore aggiornate: {selected_game['hours_played']:g}")
             else:
                 print("Inserisci una scelta valida.")
 
