@@ -9,7 +9,17 @@ def print_menu():
     print("--- Questlog ---")
     print("1. Aggiungi gioco")
     print("2. Mostra libreria")
-    print("3. Esci")
+    print("3. Elimina gioco")
+    print("4. Esci")
+
+
+def ask_non_empty_text(prompt):
+    while True:
+        answer = input(prompt).strip()
+        if answer != "":
+            return answer
+        else:
+            print("Il campo non può essere vuoto.")
 
 
 def ask_status():
@@ -22,15 +32,6 @@ def ask_status():
             return game_status
         else:
             print("Inserisci uno stato valido.")
-
-
-def ask_non_empty_text(prompt):
-    while True:
-        answer = input(prompt).strip()
-        if answer != "":
-            return answer
-        else:
-            print("Il campo non può essere vuoto.")
 
 
 def ask_hours_played(allow_zero=True):
@@ -46,6 +47,25 @@ def ask_hours_played(allow_zero=True):
                 return hours_played
         except ValueError:
             print("Inserisci un valore valido. (es. 12.5)")
+
+
+def ask_game_index(games):
+    while True:
+        number_text = input(f"Inserisci numero del gioco tra 1 e {len(games)}: ")
+        try:
+            game_number = int(number_text)
+            if 1 <= game_number <= len(games):
+                index = game_number - 1
+                return index
+            else:
+                print(f"Numero non valido, inserisci un numero compreso tra 1 e {len(games)}")
+        except ValueError:
+            print("Inserisci un numero")
+
+
+def ask_confirmation(prompt):
+    answer_confirm = input(prompt).strip().lower()
+    return answer_confirm == "s"
 
 
 def print_library(games):
@@ -97,10 +117,25 @@ while True:
             }
             games.append(game)
             print(f"'{title}' aggiunto alla libreria. ")
+
     elif choice == "2":
         print_library(games)
+
     elif choice == "3":
+        print_library(games)
+        if len(games) != 0:
+            game_index = ask_game_index(games)
+            selected_game = games[game_index]
+            confirm_delete = ask_confirmation(f"Sei sicuro di voler eliminare '{format_game_line(selected_game)}'? (s/n) ")
+            if confirm_delete:
+                games.pop(game_index)
+                print(f"'{selected_game['title']}' eliminato dalla libreria")
+            else:
+                print("Nessun gioco eliminato.")
+
+    elif choice == "4":
         print("Torna presto!")
         break
+
     else:
         print("Inserisci una scelta valida")
