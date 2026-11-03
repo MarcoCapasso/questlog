@@ -9,8 +9,17 @@ def print_menu():
     print("--- Questlog ---")
     print("1. Aggiungi gioco")
     print("2. Mostra libreria")
-    print("3. Elimina gioco")
-    print("4. Esci")
+    print("3. Modifica gioco")
+    print("4. Elimina gioco")
+    print("5. Esci")
+
+
+def print_edit_menu():
+    print()
+    print("1. Titolo")
+    print("2. Piattaforma")
+    print("3. Stato")
+    print("4. Ore")
 
 
 def ask_non_empty_text(prompt):
@@ -84,8 +93,10 @@ def format_game_line(game):
         return f"{game['title']} ({game['platform']}) | {game['status']} | {game['hours_played']:g} ore"
 
 
-def is_duplicate_game(games, title, platform):
-    for game in games:
+def is_duplicate_game(games, title, platform, ignore_index=None):
+    for index, game in enumerate(games):
+        if index == ignore_index:
+            continue
         same_title = game["title"].lower() == title.lower()
         same_platform = game["platform"].lower() == platform.lower()
         if same_title and same_platform:
@@ -126,6 +137,35 @@ while True:
         if len(games) != 0:
             game_index = ask_game_index(games)
             selected_game = games[game_index]
+            print(f"Hai selezionato '{selected_game['title']}'")
+            print_edit_menu()
+            field_choice = ask_non_empty_text("Quale campo vuoi modificare? ")
+            if field_choice == "1":
+                new_title = ask_non_empty_text("Inserisci il nuovo titolo: ")
+                if is_duplicate_game(games, new_title, selected_game['platform'], ignore_index=game_index):
+                    print(f"'{new_title}' su {selected_game['platform']} è già presente in libreria.")
+                else:
+                    selected_game["title"] = new_title
+                    print(f"Titolo aggiornato in '{selected_game['title']}'")
+            elif field_choice == "2":
+                new_platform = ask_non_empty_text("Inserisci la nuova piattaforma: ")
+                if is_duplicate_game(games, selected_game['title'], new_platform, ignore_index=game_index):
+                    print(f"'{selected_game['title']}' su {new_platform} è già presente in libreria.")
+                else:
+                    selected_game["platform"] = new_platform
+                    print(f"Piattaforma aggiornata in '{selected_game['platform']}'")
+            elif field_choice == "3":
+                print("Work in Progress")
+            elif field_choice == "4":
+                print("Work in Progress")
+            else:
+                print("Inserisci una scelta valida.")
+
+    elif choice == "4":
+        print_library(games)
+        if len(games) != 0:
+            game_index = ask_game_index(games)
+            selected_game = games[game_index]
             confirm_delete = ask_confirmation(f"Sei sicuro di voler eliminare '{format_game_line(selected_game)}'? (s/n) ")
             if confirm_delete:
                 games.pop(game_index)
@@ -133,7 +173,7 @@ while True:
             else:
                 print("Nessun gioco eliminato.")
 
-    elif choice == "4":
+    elif choice == "5":
         print("Torna presto!")
         break
 
