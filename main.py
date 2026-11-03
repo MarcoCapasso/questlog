@@ -1,3 +1,6 @@
+import math
+
+
 ALLOWED_STATUSES = ["backlog", "playing", "completed", "dropped"]
 
 
@@ -162,7 +165,9 @@ def ask_hours_played(allow_zero=True):
         hours_text = input("Ore giocate: ")
         try:
             hours_played = float(hours_text)
-            if hours_played < 0:
+            if not math.isfinite(hours_played):
+                print("Inserisci un valore valido (es. 12.5).")
+            elif hours_played < 0:
                 print("Le ore non possono essere inferiori a 0.")
             elif hours_played == 0 and not allow_zero:
                 print("Le ore devono essere maggiori di 0.")
