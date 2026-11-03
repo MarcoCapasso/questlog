@@ -33,6 +33,7 @@ def ask_non_empty_text(prompt):
 
 def ask_status():
     print()
+    print("--Seleziona uno stato--")
     for status in ALLOWED_STATUSES:
         print(f"- {status}")
     while True:
@@ -107,6 +108,7 @@ def is_duplicate_game(games, title, platform, ignore_index=None):
 while True:
     print_menu()
     choice = input("Scegli voce del menu: ")
+    # Aggiungi gioco
     if choice == "1":
         title = ask_non_empty_text("Inserisci il titolo del gioco: ")
         platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
@@ -128,10 +130,11 @@ while True:
             }
             games.append(game)
             print(f"'{title}' aggiunto alla libreria. ")
-
+    # Mostra liberia
     elif choice == "2":
         print_library(games)
 
+    # Modifica gioco
     elif choice == "3":
         print_library(games)
         if len(games) != 0:
@@ -140,6 +143,7 @@ while True:
             print(f"Hai selezionato '{selected_game['title']}'")
             print_edit_menu()
             field_choice = ask_non_empty_text("Quale campo vuoi modificare? ")
+            # Titolo
             if field_choice == "1":
                 new_title = ask_non_empty_text("Inserisci il nuovo titolo: ")
                 if is_duplicate_game(games, new_title, selected_game['platform'], ignore_index=game_index):
@@ -147,6 +151,7 @@ while True:
                 else:
                     selected_game["title"] = new_title
                     print(f"Titolo aggiornato in '{selected_game['title']}'")
+            # Piattaforma
             elif field_choice == "2":
                 new_platform = ask_non_empty_text("Inserisci la nuova piattaforma: ")
                 if is_duplicate_game(games, selected_game['title'], new_platform, ignore_index=game_index):
@@ -154,13 +159,36 @@ while True:
                 else:
                     selected_game["platform"] = new_platform
                     print(f"Piattaforma aggiornata in '{selected_game['platform']}'")
+            # Stato
             elif field_choice == "3":
-                print("Work in Progress")
+                new_status = ask_status()
+                if new_status == "backlog":
+                    if selected_game['hours_played'] > 0:
+                        print("Un gioco iniziato non può tornare in backlog")
+                    else:
+                        selected_game["status"] = new_status
+                        print(f"Stato aggiornato in {selected_game['status']}")
+                elif new_status == "completed":
+                    if selected_game["hours_played"] > 0:
+                        current_hours = selected_game["hours_played"]
+                        if ask_confirmation(f"Vuoi aggiornare le ore? Attuali: {current_hours:g} (s/n) "):
+                            selected_game["hours_played"] = ask_hours_played(allow_zero=False)
+                    else:
+                        selected_game["hours_played"] = ask_hours_played(allow_zero=False)
+                    selected_game["status"] = new_status
+                    print(f"Stato aggiornato in '{new_status}', ore: {selected_game['hours_played']:g}")
+                else:
+                    selected_game["status"] = new_status
+                    print(f"Stato aggiornato in {selected_game['status']}")
+
+            # Ore di gioco
             elif field_choice == "4":
                 print("Work in Progress")
+
             else:
                 print("Inserisci una scelta valida.")
 
+    # Elimina Gioco
     elif choice == "4":
         print_library(games)
         if len(games) != 0:
@@ -173,6 +201,7 @@ while True:
             else:
                 print("Nessun gioco eliminato.")
 
+    # Esci
     elif choice == "5":
         print("Torna presto!")
         break
