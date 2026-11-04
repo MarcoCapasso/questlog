@@ -1,10 +1,17 @@
+import json
 import math
 
 
 ALLOWED_STATUSES = ["backlog", "playing", "completed", "dropped"]
+LIBRARY_FILE = "game_library.json"
 
 
 games = []
+
+
+def save_library(games):
+    with open(LIBRARY_FILE, "w", encoding="utf-8") as file:
+        json.dump(games, file, indent=4, ensure_ascii=False)
 
 
 def print_menu():
@@ -290,6 +297,7 @@ while True:
     choice = input("Scegli voce del menu: ")
     if choice == "1":
         add_game(games)
+        save_library(games)
 
     elif choice == "2":
         print_library(games)
@@ -299,10 +307,12 @@ while True:
 
     elif choice == "4":
         edit_game(games)
+        save_library(games)
 
     elif choice == "5":
         delete_game(games)
-
+        save_library(games)
+        
     elif choice == "6":
         print("Torna presto!")
         break
