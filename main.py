@@ -6,12 +6,15 @@ ALLOWED_STATUSES = ["backlog", "playing", "completed", "dropped"]
 LIBRARY_FILE = "game_library.json"
 
 
-games = []
-
-
 def save_library(games):
     with open(LIBRARY_FILE, "w", encoding="utf-8") as file:
         json.dump(games, file, indent=4, ensure_ascii=False)
+
+
+def load_library():
+    with open(LIBRARY_FILE, "r", encoding="utf-8") as file:
+        games = json.load(file)
+        return games
 
 
 def print_menu():
@@ -291,6 +294,9 @@ def is_duplicate_game(games, title, platform, ignore_index=None):
     return False
 
 
+games = load_library()
+
+
 while True:
     print_menu()
     print()
@@ -312,7 +318,7 @@ while True:
     elif choice == "5":
         delete_game(games)
         save_library(games)
-        
+
     elif choice == "6":
         print("Torna presto!")
         break
