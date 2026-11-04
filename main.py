@@ -27,6 +27,13 @@ def print_edit_menu():
     print("4. Ore")
 
 
+def print_search_menu():
+    print()
+    print("--- Filtro ---")
+    print("1. Titolo")
+    print("2. Stato")
+
+
 def add_game(games):
     title = ask_non_empty_text("Inserisci il titolo del gioco: ")
     platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
@@ -149,6 +156,15 @@ def find_game_indices_by_title(games, query):
     return matching_indices
 
 
+def find_game_indices_by_status(games, status):
+    matching_indices = []
+
+    for index, game in enumerate(games):
+        if status == game['status']:
+            matching_indices.append(index)
+    return matching_indices
+
+
 def print_search_results(games, matching_indices, query):
     if len(matching_indices) == 0:
         print(f"Nessuna corrispondenza per '{query}'.")
@@ -161,9 +177,18 @@ def print_search_results(games, matching_indices, query):
 
 
 def search_games(games):
-    search_text = ask_non_empty_text("Cerca un titolo: ")
-    matching_indices = find_game_indices_by_title(games, search_text)
-    print_search_results(games, matching_indices, search_text)
+    print_search_menu()
+    search_choice = ask_non_empty_text("Filtra per: ")
+    if search_choice == "1":
+        search_text = ask_non_empty_text("Cerca un titolo: ")
+        matching_indices = find_game_indices_by_title(games, search_text)
+        print_search_results(games, matching_indices, search_text)
+    elif search_choice == "2":
+        selected_status = ask_status()
+        matching_indices = find_game_indices_by_status(games, selected_status)
+        print_search_results(games, matching_indices, selected_status)
+    else:
+        print("Inserisci un filtro valido.")
 
 
 def ask_non_empty_text(prompt):
