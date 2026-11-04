@@ -10,34 +10,37 @@ from display import print_library, print_menu
 from storage import load_library, save_library
 
 
-games = load_library()
+def main():
+    games = load_library()
+    while True:
+        print_menu()
+        print()
+        choice = input("Scegli voce del menu: ")
+        if choice == "1":
+            add_game(games)
+            save_library(games)
+
+        elif choice == "2":
+            print_library(games)
+
+        elif choice == "3":
+            search_games(games)
+
+        elif choice == "4":
+            edit_game(games)
+            save_library(games)
+
+        elif choice == "5":
+            delete_game(games)
+            save_library(games)
+
+        elif choice == "6":
+            print("Torna presto!")
+            break
+
+        else:
+            print("Inserisci una scelta valida.")
 
 
-while True:
-    print_menu()
-    print()
-    choice = input("Scegli voce del menu: ")
-    if choice == "1":
-        add_game(games)
-        save_library(games)
-
-    elif choice == "2":
-        print_library(games)
-
-    elif choice == "3":
-        search_games(games)
-
-    elif choice == "4":
-        edit_game(games)
-        save_library(games)
-
-    elif choice == "5":
-        delete_game(games)
-        save_library(games)
-
-    elif choice == "6":
-        print("Torna presto!")
-        break
-
-    else:
-        print("Inserisci una scelta valida.")
+if __name__ == "__main__":
+    main()
