@@ -10,7 +10,8 @@ from display import print_library, print_menu
 from storage import load_library, save_library
 
 
-def main():
+def main() -> None:
+    """Carica la libreria e gestisce il menu finché l'utente non esce."""
     games = load_library()
     while True:
         print_menu()

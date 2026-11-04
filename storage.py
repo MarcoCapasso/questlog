@@ -8,12 +8,14 @@ LIBRARY_FILE = "game_library.json"
 CORRUPTED_LIBRARY_FILE = "game_library_corrupted.json"
 
 
-def save_library(games):
+def save_library(games: list[dict]) -> None:
+    """Scrive l'intera libreria nel file JSON, sovrascrivendolo."""
     with open(LIBRARY_FILE, "w", encoding="utf-8") as file:
         json.dump(games, file, indent=4, ensure_ascii=False)
 
 
-def load_library():
+def load_library() -> list[dict]:
+    """Legge la libreria dal file JSON; se manca o è danneggiato restituisce una lista vuota."""
     try:
         with open(LIBRARY_FILE, "r", encoding="utf-8") as file:
             games = json.load(file)

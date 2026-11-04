@@ -1,26 +1,27 @@
 """Operazioni del menu: aggiunta, modifica, eliminazione e ricerca."""
 
 from display import (
+    format_game_line,
     print_edit_menu,
     print_search_menu,
     print_search_results,
-    format_game_line,
 )
 from library import (
-    is_duplicate_game,
     find_game_indices_by_status,
     find_game_indices_by_title,
+    is_duplicate_game,
 )
 from prompts import (
     ask_confirmation,
-    ask_non_empty_text,
     ask_hours_played,
+    ask_non_empty_text,
     ask_status,
     select_game_index,
 )
 
 
-def add_game(games):
+def add_game(games: list[dict]) -> None:
+    """Chiede i dati di un nuovo gioco e lo aggiunge alla libreria, se non è un duplicato."""
     title = ask_non_empty_text("Inserisci il titolo del gioco: ")
     platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
     if is_duplicate_game(games, title, platform):
@@ -43,7 +44,8 @@ def add_game(games):
         print(f"'{title}' aggiunto alla libreria.")
 
 
-def delete_game(games):
+def delete_game(games: list[dict]) -> None:
+    """Fa scegliere un gioco e lo elimina dopo conferma."""
     game_index = select_game_index(games)
     if game_index is not None:
         selected_game = games[game_index]
@@ -55,7 +57,8 @@ def delete_game(games):
             print("Nessun gioco eliminato.")
 
 
-def edit_game(games):
+def edit_game(games: list[dict]) -> None:
+    """Fa scegliere un gioco e il campo da modificare."""
     game_index = select_game_index(games)
     if game_index is not None:
         selected_game = games[game_index]
@@ -74,7 +77,8 @@ def edit_game(games):
             print("Inserisci una scelta valida.")
 
 
-def edit_game_title(games, game_index):
+def edit_game_title(games: list[dict], game_index: int) -> None:
+    """Modifica il titolo di un gioco, rifiutando i duplicati."""
     selected_game = games[game_index]
     new_title = ask_non_empty_text("Inserisci il nuovo titolo: ")
     if is_duplicate_game(games, new_title, selected_game["platform"], ignore_index=game_index):
@@ -84,7 +88,8 @@ def edit_game_title(games, game_index):
         print(f"Titolo aggiornato in '{new_title}'.")
 
 
-def edit_game_platform(games, game_index):
+def edit_game_platform(games: list[dict], game_index: int) -> None:
+    """Modifica la piattaforma di un gioco, rifiutando i duplicati."""
     selected_game = games[game_index]
     new_platform = ask_non_empty_text("Inserisci la nuova piattaforma: ")
     if is_duplicate_game(games, selected_game["title"], new_platform, ignore_index=game_index):
@@ -94,7 +99,8 @@ def edit_game_platform(games, game_index):
         print(f"Piattaforma aggiornata in '{new_platform}'.")
 
 
-def edit_game_status(game):
+def edit_game_status(game: dict) -> None:
+    """Modifica lo stato di un gioco rispettando le regole sulle ore."""
     new_status = ask_status()
     if new_status == "backlog":
         if game["hours_played"] > 0:
@@ -116,7 +122,8 @@ def edit_game_status(game):
         print(f"Stato aggiornato in '{new_status}'.")
 
 
-def edit_game_hours(game):
+def edit_game_hours(game: dict) -> None:
+    """Modifica le ore di un gioco; un gioco in backlog passa a playing dopo conferma."""
     if game["status"] == "backlog":
         if ask_confirmation("Il gioco passerà da 'backlog' a 'playing'. Confermi? (s/n) "):
             game["hours_played"] = ask_hours_played(allow_zero=False)
@@ -132,7 +139,8 @@ def edit_game_hours(game):
         print(f"Ore aggiornate: {game['hours_played']:g}.")
 
 
-def search_games(games):
+def search_games(games: list[dict]) -> None:
+    """Fa scegliere il criterio di ricerca e mostra i giochi trovati."""
     print_search_menu()
     search_choice = ask_non_empty_text("Filtra per: ")
     if search_choice == "1":
@@ -144,4 +152,4 @@ def search_games(games):
         matching_indices = find_game_indices_by_status(games, selected_status)
         print_search_results(games, matching_indices, selected_status)
     else:
-        print("Inserisci un filtro valido.")
+        print("Inserisci una scelta valida.")

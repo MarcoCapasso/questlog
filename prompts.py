@@ -6,7 +6,8 @@ from display import print_library
 from library import ALLOWED_STATUSES
 
 
-def ask_non_empty_text(prompt):
+def ask_non_empty_text(prompt: str) -> str:
+    """Chiede un testo finché non è vuoto e lo restituisce senza spazi ai bordi."""
     while True:
         answer = input(prompt).strip()
         if answer != "":
@@ -15,7 +16,8 @@ def ask_non_empty_text(prompt):
             print("Il campo non può essere vuoto.")
 
 
-def ask_status():
+def ask_status() -> str:
+    """Mostra gli stati ammessi e chiede di sceglierne uno, normalizzato in minuscolo."""
     print()
     print("--- Seleziona uno stato ---")
     for status in ALLOWED_STATUSES:
@@ -28,7 +30,8 @@ def ask_status():
             print("Inserisci uno stato valido.")
 
 
-def ask_hours_played(allow_zero=True):
+def ask_hours_played(allow_zero: bool = True) -> float:
+    """Chiede le ore giocate finché non sono un numero finito, non negativo e, se richiesto, maggiore di zero."""
     while True:
         hours_text = input("Ore giocate: ")
         try:
@@ -45,7 +48,8 @@ def ask_hours_played(allow_zero=True):
             print("Inserisci un valore valido (es. 12.5).")
 
 
-def ask_game_index(games):
+def ask_game_index(games: list[dict]) -> int:
+    """Chiede il numero di un gioco mostrato in elenco e restituisce il suo indice nella lista."""
     while True:
         number_text = input(f"Inserisci numero del gioco tra 1 e {len(games)}: ")
         try:
@@ -59,12 +63,14 @@ def ask_game_index(games):
             print("Inserisci un numero.")
 
 
-def ask_confirmation(prompt):
+def ask_confirmation(prompt: str) -> bool:
+    """Restituisce True solo se l'utente risponde 's'."""
     answer_confirm = input(prompt).strip().lower()
     return answer_confirm == "s"
 
 
-def select_game_index(games):
+def select_game_index(games: list[dict]) -> int | None:
+    """Mostra la libreria e restituisce l'indice scelto, oppure None se la libreria è vuota."""
     print_library(games)
     if len(games) == 0:
         return None

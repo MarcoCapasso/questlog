@@ -1,7 +1,8 @@
 """Stampa di menu, libreria e risultati nel terminale."""
 
 
-def print_menu():
+def print_menu() -> None:
+    """Mostra il menu principale."""
     print()
     print("--- Questlog ---")
     print("1. Aggiungi gioco")
@@ -12,7 +13,8 @@ def print_menu():
     print("6. Esci")
 
 
-def print_edit_menu():
+def print_edit_menu() -> None:
+    """Mostra i campi modificabili di un gioco."""
     print()
     print("--- Modifica ---")
     print("1. Titolo")
@@ -21,14 +23,16 @@ def print_edit_menu():
     print("4. Ore")
 
 
-def print_search_menu():
+def print_search_menu() -> None:
+    """Mostra i criteri di ricerca."""
     print()
     print("--- Filtro ---")
     print("1. Titolo")
     print("2. Stato")
 
 
-def print_library(games):
+def print_library(games: list[dict]) -> None:
+    """Mostra la libreria numerata, oppure un avviso se è vuota."""
     if len(games) == 0:
         print("Libreria vuota, aggiungi prima qualche gioco.")
     else:
@@ -37,7 +41,8 @@ def print_library(games):
             print(f"{position}. {format_game_line(game)}")
 
 
-def print_search_results(games, matching_indices, query):
+def print_search_results(games: list[dict], matching_indices: list[int], query: str) -> None:
+    """Mostra i giochi trovati con il loro numero nella libreria."""
     if len(matching_indices) == 0:
         print(f"Nessuna corrispondenza per '{query}'.")
     else:
@@ -48,7 +53,8 @@ def print_search_results(games, matching_indices, query):
             print(f"{game_number}. {format_game_line(game)}")
 
 
-def format_game_line(game):
+def format_game_line(game: dict) -> str:
+    """Restituisce la descrizione di un gioco su una riga; le ore non compaiono per il backlog."""
     if game["status"] == "backlog":
         return f"{game['title']} ({game['platform']}) | {game['status']}"
     else:
