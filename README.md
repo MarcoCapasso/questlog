@@ -26,6 +26,17 @@ python main.py
 
 La libreria viene salvata nel file `game_library.json`, nella cartella del progetto. Il file è escluso dal repository perché contiene dati personali.
 
+### Sviluppo
+
+Per eseguire i test serve un ambiente virtuale con le dipendenze di sviluppo:
+
+```bash
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+pytest
+```
+
 ## Regole della libreria
 
 ### Stati
