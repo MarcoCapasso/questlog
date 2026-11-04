@@ -1,9 +1,15 @@
 import math
 
+from library import (
+    ALLOWED_STATUSES,
+    find_game_indices_by_title,
+    find_game_indices_by_status,
+    is_duplicate_game,
+)
 from storage import load_library, save_library
 
 
-ALLOWED_STATUSES = ["backlog", "playing", "completed", "dropped"]
+
 
 
 def print_menu():
@@ -145,23 +151,7 @@ def edit_game_hours(game):
         print(f"Ore aggiornate: {game['hours_played']:g}.")
 
 
-def find_game_indices_by_title(games, query):
-    matching_indices = []
-    normalized_query = query.lower()
 
-    for index, game in enumerate(games):
-        if normalized_query in game['title'].lower():
-            matching_indices.append(index)
-    return matching_indices
-
-
-def find_game_indices_by_status(games, status):
-    matching_indices = []
-
-    for index, game in enumerate(games):
-        if status == game['status']:
-            matching_indices.append(index)
-    return matching_indices
 
 
 def print_search_results(games, matching_indices, query):
@@ -272,15 +262,7 @@ def format_game_line(game):
         return f"{game['title']} ({game['platform']}) | {game['status']} | {game['hours_played']:g} ore"
 
 
-def is_duplicate_game(games, title, platform, ignore_index=None):
-    for index, game in enumerate(games):
-        if index == ignore_index:
-            continue
-        same_title = game["title"].lower() == title.lower()
-        same_platform = game["platform"].lower() == platform.lower()
-        if same_title and same_platform:
-            return True
-    return False
+
 
 
 games = load_library()
