@@ -12,9 +12,13 @@ def save_library(games):
 
 
 def load_library():
-    with open(LIBRARY_FILE, "r", encoding="utf-8") as file:
-        games = json.load(file)
-        return games
+    try:
+        with open(LIBRARY_FILE, "r", encoding="utf-8") as file:
+            games = json.load(file)
+            return games
+    except FileNotFoundError:
+        print("Nessuna libreria trovata, ne inizia una nuova")
+        return []
 
 
 def print_menu():
