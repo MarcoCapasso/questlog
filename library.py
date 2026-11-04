@@ -1,5 +1,6 @@
 """Regole e ricerche sulla libreria, senza interazione con l'utente."""
 
+
 ALLOWED_STATUSES = ["backlog", "playing", "completed", "dropped"]
 
 
