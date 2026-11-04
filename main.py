@@ -12,9 +12,10 @@ def print_menu():
     print("--- Questlog ---")
     print("1. Aggiungi gioco")
     print("2. Mostra libreria")
-    print("3. Modifica gioco")
-    print("4. Elimina gioco")
-    print("5. Esci")
+    print("3. Cerca gioco")
+    print("4. Modifica gioco")
+    print("5. Elimina gioco")
+    print("6. Esci")
 
 
 def print_edit_menu():
@@ -138,6 +139,33 @@ def edit_game_hours(game):
         print(f"Ore aggiornate: {game['hours_played']:g}.")
 
 
+def find_game_indices_by_title(games, query):
+    matching_indices = []
+    normalized_query = query.lower()
+
+    for index, game in enumerate(games):
+        if normalized_query in game['title'].lower():
+            matching_indices.append(index)
+    return matching_indices
+
+
+def print_search_results(games, matching_indices, query):
+    if len(matching_indices) == 0:
+        print(f"Nessuna corrispondenza per '{query}'.")
+    else:
+        print("--- Risultati Ricerca ---")
+        for index in matching_indices:
+            game = games[index]
+            game_number = index + 1
+            print(f"{game_number}. {format_game_line(game)}")
+
+
+def search_games(games):
+    search_text = ask_non_empty_text("Cerca un titolo: ")
+    matching_indices = find_game_indices_by_title(games, search_text)
+    print_search_results(games, matching_indices, search_text)
+
+
 def ask_non_empty_text(prompt):
     while True:
         answer = input(prompt).strip()
@@ -233,6 +261,7 @@ def is_duplicate_game(games, title, platform, ignore_index=None):
 
 while True:
     print_menu()
+    print()
     choice = input("Scegli voce del menu: ")
     if choice == "1":
         add_game(games)
@@ -241,12 +270,15 @@ while True:
         print_library(games)
 
     elif choice == "3":
-        edit_game(games)
+        search_games(games)
 
     elif choice == "4":
-        delete_game(games)
+        edit_game(games)
 
     elif choice == "5":
+        delete_game(games)
+
+    elif choice == "6":
         print("Torna presto!")
         break
 
