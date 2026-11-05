@@ -1,5 +1,7 @@
 """Stampa di menu, libreria e risultati nel terminale."""
 
+from models import Game
+
 
 def print_menu() -> None:
     """Mostra il menu principale."""
@@ -31,7 +33,7 @@ def print_search_menu() -> None:
     print("2. Stato")
 
 
-def print_library(games: list[dict]) -> None:
+def print_library(games: list[Game]) -> None:
     """Mostra la libreria numerata, oppure un avviso se è vuota."""
     if len(games) == 0:
         print("Libreria vuota, aggiungi prima qualche gioco.")
@@ -41,7 +43,7 @@ def print_library(games: list[dict]) -> None:
             print(f"{position}. {format_game_line(game)}")
 
 
-def print_search_results(games: list[dict], matching_indices: list[int], query: str) -> None:
+def print_search_results(games: list[Game], matching_indices: list[int], query: str) -> None:
     """Mostra i giochi trovati con il loro numero nella libreria."""
     if len(matching_indices) == 0:
         print(f"Nessuna corrispondenza per '{query}'.")
@@ -53,9 +55,9 @@ def print_search_results(games: list[dict], matching_indices: list[int], query: 
             print(f"{game_number}. {format_game_line(game)}")
 
 
-def format_game_line(game: dict) -> str:
+def format_game_line(game: Game) -> str:
     """Restituisce la descrizione di un gioco su una riga; le ore non compaiono per il backlog."""
-    if game["status"] == "backlog":
-        return f"{game['title']} ({game['platform']}) | {game['status']}"
+    if game.status == "backlog":
+        return f"{game.title} ({game.platform}) | {game.status}"
     else:
-        return f"{game['title']} ({game['platform']}) | {game['status']} | {game['hours_played']:g} ore"
+        return f"{game.title} ({game.platform}) | {game.status} | {game.hours_played:g} ore"

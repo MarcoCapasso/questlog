@@ -4,6 +4,7 @@ import math
 
 from display import print_library
 from library import ALLOWED_STATUSES
+from models import Game
 
 
 def ask_non_empty_text(prompt: str) -> str:
@@ -48,7 +49,7 @@ def ask_hours_played(allow_zero: bool = True) -> float:
             print("Inserisci un valore valido (es. 12.5).")
 
 
-def ask_game_index(games: list[dict]) -> int:
+def ask_game_index(games: list[Game]) -> int:
     """Chiede il numero di un gioco mostrato in elenco e restituisce il suo indice nella lista."""
     while True:
         number_text = input(f"Inserisci numero del gioco tra 1 e {len(games)}: ")
@@ -69,7 +70,7 @@ def ask_confirmation(prompt: str) -> bool:
     return answer_confirm == "s"
 
 
-def select_game_index(games: list[dict]) -> int | None:
+def select_game_index(games: list[Game]) -> int | None:
     """Mostra la libreria e restituisce l'indice scelto, oppure None se la libreria è vuota."""
     print_library(games)
     if len(games) == 0:
