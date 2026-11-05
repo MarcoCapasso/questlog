@@ -10,3 +10,7 @@ class Game:
     platform: str
     status: str
     hours_played: float
+    rating: float | None = None
+    start_date: str | None = None
+    completion_date: str | None = None
+
