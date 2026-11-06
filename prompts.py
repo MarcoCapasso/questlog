@@ -4,7 +4,7 @@ import math
 from datetime import datetime
 
 from display import print_library, print_playthroughs
-from library import is_valid_date_order, today_iso
+from library import is_valid_date_order, is_valid_rating, today_iso
 from models import Game
 
 
@@ -75,12 +75,9 @@ def ask_rating(prompt: str) -> float | None:
             return None
         try:
             rating = float(rating_text)
-            if not 1 <= rating <= 10:
-                print("Il voto deve essere tra 1 e 10.")
-            elif not (rating * 2).is_integer():
-                print("Sono ammessi solo voti interi o mezzi punti (es. 7.5).")
-            else:
+            if is_valid_rating(rating):
                 return rating
+            print("Il voto deve essere tra 1 e 10, intero o a mezzi punti (es. 7.5).")
         except ValueError:
             print("Inserisci un numero.")
 

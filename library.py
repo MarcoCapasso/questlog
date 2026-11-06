@@ -99,6 +99,11 @@ def apply_status_change(playthrough: Playthrough, new_status: str, today: str) -
         playthrough.completion_date = None
 
 
+def is_valid_rating(rating: float) -> bool:
+    """Indica se il voto è tra 1 e 10, intero o a mezzi punti."""
+    return 1 <= rating <= 10 and (rating * 2).is_integer()
+
+
 def is_valid_date_order(start_date: str | None, completion_date: str | None) -> bool:
     """Indica se il completamento non precede l'inizio; sempre vero se manca una delle due date."""
     if start_date is None or completion_date is None:
