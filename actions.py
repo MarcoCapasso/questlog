@@ -1,6 +1,6 @@
 """Azioni del menu: coordinano richieste, regole, stampa e salvataggio."""
 
-from csv_io import EXPORT_FILE, export_csv
+from csv_io import CSV_FILE, export_csv, import_csv
 from display import (
     print_game_details,
     print_game_menu,
@@ -263,4 +263,32 @@ def export_library(games: list[Game]) -> None:
         print("Libreria vuota, aggiungi prima qualche gioco.")
         return
     export_csv(games)
-    print(f"Libreria esportata in '{EXPORT_FILE}'.")
+    print(f"Libreria esportata in '{CSV_FILE}'.")
+
+
+def import_library(games: list[Game]) -> None:
+    """Sostituisce la libreria con i giochi del file CSV, dopo averlo validato e chiesto conferma."""
+    try:
+        imported_games = import_csv(today_iso())
+    except FileNotFoundError:
+        print(f"File '{CSV_FILE}' non trovato: mettilo nella cartella di Questlog.")
+        return
+    except UnicodeDecodeError:
+        print("Il file non è in UTF-8: da Excel salvalo come 'CSV UTF-8'.")
+        return
+    except ValueError as error:
+        print(f"Import annullato, la libreria non è cambiata. {error}")
+        return
+
+    prompt = (
+        f"Trovati {len(imported_games)} giochi. "
+        f"La libreria attuale ({len(games)} giochi) verrà sostituita. Continuare? (s/n): "
+    )
+    if not ask_confirmation(prompt):
+        print("Import annullato.")
+        return
+
+    games.clear()
+    games.extend(imported_games)
+    save_library(games)
+    print("Libreria importata.")

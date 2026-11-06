@@ -15,7 +15,8 @@ def print_menu() -> None:
     print("3. Apri gioco")
     print("4. Cerca gioco")
     print("5. Esporta CSV")
-    print("6. Esci")
+    print("6. Importa CSV")
+    print("7. Esci")
 
 
 def print_game_menu() -> None:
