@@ -2,6 +2,8 @@
 
 from datetime import date
 
+import pandas as pd
+
 from library import calculate_total_hours, has_completed_playthrough, is_backlog
 from models import Game, Playthrough
 
@@ -14,9 +16,10 @@ def print_menu() -> None:
     print("2. Mostra libreria")
     print("3. Apri gioco")
     print("4. Cerca gioco")
-    print("5. Esporta CSV")
-    print("6. Importa CSV")
-    print("7. Esci")
+    print("5. Mostra statistiche")
+    print("6. Esporta CSV")
+    print("7. Importa CSV")
+    print("8. Esci")
 
 
 def print_game_menu() -> None:
@@ -90,6 +93,21 @@ def print_playthroughs(game: Game) -> None:
     print("Partite")
     for position, playthrough in enumerate(game.playthroughs, start=1):
         print(f"{position}. {format_playthrough_line(playthrough)}")
+
+
+def print_statistics(hours_by_platform: pd.Series, status_counts: pd.Series, median_hours: float) -> None:
+    """Mostra le statistiche della libreria."""
+    print()
+    print("--- Statistiche ---")
+    print(f"{'Mediana ore per gioco:':<24}{median_hours:g}")
+    print()
+    print("Ore per piattaforma")
+    for platform, hours in hours_by_platform.items():
+        print(f"  {platform:<22}{hours:g}")
+    print()
+    print("Partite per stato")
+    for status, count in status_counts.items():
+        print(f"  {status:<22}{count}")
 
 
 def format_game_line(game: Game) -> str:

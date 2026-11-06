@@ -1,5 +1,12 @@
 """Azioni del menu: coordinano richieste, regole, stampa e salvataggio."""
 
+from analysis import (
+    games_to_dataframe,
+    hours_by_platform,
+    median_hours_per_game,
+    playthrough_rows,
+    playthroughs_by_status,
+)
 from csv_io import CSV_FILE, export_csv, import_csv
 from display import (
     print_game_details,
@@ -8,6 +15,7 @@ from display import (
     print_playthrough_edit_menu,
     print_search_menu,
     print_search_results,
+    print_statistics,
 )
 from library import (
     PLAYTHROUGH_STATUSES,
@@ -292,3 +300,12 @@ def import_library(games: list[Game]) -> None:
     games.extend(imported_games)
     save_library(games)
     print("Libreria importata.")
+
+
+def show_statistics(games: list[Game]) -> None:
+    """Calcola e mostra le statistiche delle partite giocate."""
+    df = games_to_dataframe(games)
+    if playthrough_rows(df).empty:
+        print("Nessuna partita giocata: aggiungine una per vedere le statistiche.")
+        return
+    print_statistics(hours_by_platform(df), playthroughs_by_status(df), median_hours_per_game(df))
