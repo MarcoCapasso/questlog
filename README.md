@@ -1,24 +1,26 @@
 # Questlog
 
-Applicazione da terminale per catalogare la propria libreria di videogiochi e tenere traccia di stato e ore di gioco.
+Applicazione da terminale per catalogare la propria libreria di videogiochi e tenere traccia di stato, ore di gioco, voti e date.
 
 > Progetto in sviluppo. Questa è la versione a riga di comando: le prossime fasi aggiungeranno statistiche, grafici e un'interfaccia desktop.
 
 ## Funzionalità
 
-- **Aggiunta** di un gioco con titolo, piattaforma, stato e ore giocate.
+- **Aggiunta** di un gioco con titolo, piattaforma, stato, ore giocate, voto e date.
 - **Visualizzazione** della libreria numerata.
+- **Scheda** con tutti i dettagli di un gioco.
 - **Ricerca** per titolo, parziale e senza distinzione tra maiuscole e minuscole.
 - **Filtro** per stato.
-- **Modifica** di titolo, piattaforma, stato e ore.
+- **Modifica** di titolo, piattaforma, stato, ore, voto e date.
 - **Eliminazione** con richiesta di conferma.
+- **Date automatiche** nei cambi di stato.
 - **Salvataggio automatico** dopo ogni modifica e caricamento all'avvio.
-- **Validazione** di ogni dato inserito: campi vuoti, numeri non validi, duplicati.
+- **Validazione** di ogni dato inserito: campi vuoti, numeri e date non validi, duplicati.
 
 ## Requisiti e avvio
 
 - Python 3.10 o superiore
-- Nessuna libreria esterna
+- Nessuna libreria esterna per usare l'applicazione
 
 ```bash
 python main.py
@@ -57,11 +59,33 @@ pytest
 | Gioco `completed` | ore richieste, maggiori di 0 |
 | Qualsiasi gioco | ore mai negative, valori non numerici rifiutati |
 
-### Modifiche
+### Voto
 
-- Un gioco con ore registrate non può tornare in `backlog`.
-- Passando a `completed`, le ore vengono richieste se sono 0, altrimenti è possibile aggiornarle.
-- Inserendo le ore di un gioco in `backlog`, il gioco passa a `playing` dopo conferma.
+- Facoltativo, da 1 a 10, con mezzi punti ammessi (es. `7.5`).
+- Un valore non valido viene rifiutato, mai arrotondato.
+- Un gioco in `backlog` non può avere un voto.
+- I giochi senza voto non contano nelle medie: un voto mancante non equivale a zero.
+
+### Date
+
+Le date si inseriscono nel formato `GG/MM/AAAA` e vengono salvate in formato ISO (`AAAA-MM-GG`).
+
+| Campo | Regola |
+|---|---|
+| Data di inizio | facoltativa; mai per i giochi in `backlog` |
+| Data di completamento | facoltativa; solo per i giochi `completed` |
+| Entrambe | mai nel futuro; il completamento non può precedere l'inizio |
+
+### Cambi di stato
+
+| Cambio | Effetto |
+|---|---|
+| `backlog` → `playing` / `dropped` | la data di inizio diventa oggi, se mancante |
+| → `completed` | inizio e completamento diventano oggi, se mancanti |
+| `completed` → `playing` / `dropped` | la data di completamento viene rimossa, dopo conferma |
+| → `backlog` | solo con 0 ore; voto e data di inizio vengono rimossi, dopo conferma |
+
+Inserendo le ore di un gioco in `backlog`, il gioco passa a `playing` dopo conferma.
 
 ### Duplicati
 
@@ -74,7 +98,7 @@ Se il file della libreria non è leggibile, viene rinominato in `game_library_co
 ## Roadmap
 
 - [x] **CLI**: gestione completa della libreria con persistenza JSON
-- [ ] **Python intermedio**: classi, type hints, test automatici con pytest, importazione ed esportazione CSV, voto personale e date
+- [ ] **Python intermedio**: classi, type hints e test automatici con pytest ✅, voto e date ✅, importazione ed esportazione CSV
 - [ ] **Analisi dei dati**: statistiche con pandas e grafici con matplotlib
 - [ ] **Applicazione desktop**: interfaccia grafica e integrazione con il catalogo IGDB
 - [ ] **Pubblicazione**: eseguibile scaricabile
