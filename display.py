@@ -11,10 +11,11 @@ def print_menu() -> None:
     print("--- Questlog ---")
     print("1. Aggiungi gioco")
     print("2. Mostra libreria")
-    print("3. Cerca gioco")
-    print("4. Modifica gioco")
-    print("5. Elimina gioco")
-    print("6. Esci")
+    print("3. Dettagli gioco")
+    print("4. Cerca gioco")
+    print("5. Modifica gioco")
+    print("6. Elimina gioco")
+    print("7. Esci")
 
 
 def print_edit_menu() -> None:
@@ -57,6 +58,18 @@ def print_search_results(games: list[Game], matching_indices: list[int], query: 
             game = games[index]
             game_number = index + 1
             print(f"{game_number}. {format_game_line(game)}")
+
+
+def print_game_details(game: Game) -> None:
+    """Mostra tutti i campi di un gioco, con un trattino per quelli mancanti."""
+    print()
+    print(f"--- {game.title} ---")
+    print(f"{'Piattaforma:':<16}{game.platform}")
+    print(f"{'Stato:':<16}{game.status}")
+    print(f"{'Ore giocate:':<16}{game.hours_played:g}")
+    print(f"{'Voto:':<16}{format_rating(game.rating)}")
+    print(f"{'Inizio:':<16}{format_date(game.start_date)}")
+    print(f"{'Completamento:':<16}{format_date(game.completion_date)}")
 
 
 def format_game_line(game: Game) -> str:

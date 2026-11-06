@@ -5,6 +5,7 @@ from display import (
     format_game_line,
     format_rating,
     print_edit_menu,
+    print_game_details,
     print_search_menu,
     print_search_results,
 )
@@ -74,6 +75,13 @@ def delete_game(games: list[Game]) -> None:
             print(f"'{selected_game.title}' eliminato dalla libreria.")
         else:
             print("Nessun gioco eliminato.")
+
+
+def show_game_details(games: list[Game]) -> None:
+    """Fa scegliere un gioco e ne mostra la scheda completa."""
+    game_index = select_game_index(games)
+    if game_index is not None:
+        print_game_details(games[game_index])
 
 
 def edit_game(games: list[Game]) -> None:

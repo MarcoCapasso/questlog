@@ -5,6 +5,7 @@ from actions import (
     delete_game,
     edit_game,
     search_games,
+    show_game_details,
 )
 from display import print_library, print_menu
 from storage import load_library, save_library
@@ -25,17 +26,20 @@ def main() -> None:
             print_library(games)
 
         elif choice == "3":
-            search_games(games)
+            show_game_details(games)
 
         elif choice == "4":
+            search_games(games)
+
+        elif choice == "5":
             edit_game(games)
             save_library(games)
 
-        elif choice == "5":
+        elif choice == "6":
             delete_game(games)
             save_library(games)
 
-        elif choice == "6":
+        elif choice == "7":
             print("Torna presto!")
             break
 
