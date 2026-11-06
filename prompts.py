@@ -1,9 +1,10 @@
 """Richieste all'utente con validazione dell'input."""
 
 import math
+from datetime import datetime
 
 from display import print_library
-from library import ALLOWED_STATUSES
+from library import ALLOWED_STATUSES, today_iso
 from models import Game
 
 
@@ -73,19 +74,36 @@ def ask_confirmation(prompt: str) -> bool:
 def ask_rating(prompt: str) -> float | None:
     """Chiede un voto da 1 a 10 a mezzi punti; restituisce None se l'utente preme Invio."""
     while True:
-        rating_text = input("Voto (1-10, Invio per saltare): ").strip()
+        rating_text = input(prompt).strip()
         if rating_text == "":
             return None
         try:
             rating = float(rating_text)
             if not 1 <= rating <= 10:
-                print("Inserire un voto tra (1-10). Mezzi voti ammessi.")
+                print("Il voto deve essere tra 1 e 10.")
             elif not (rating * 2).is_integer():
                 print("Sono ammessi solo voti interi o mezzi punti (es. 7.5).")
             else:
                 return rating
         except ValueError:
-            print("Inserire un numero.")
+            print("Inserisci un numero.")
+
+
+def ask_date(prompt: str) -> str | None:
+    """Chiede una data in formato GG/MM/AAAA e la restituisce in ISO; None se l'utente preme Invio."""
+    while True:
+        date_text = input(prompt).strip()
+        if date_text == "":
+            return None
+        try:
+            parsed_date = datetime.strptime(date_text, "%d/%m/%Y")
+            iso_date = parsed_date.date().isoformat()
+            if iso_date > today_iso():
+                print("La data non può essere nel futuro.")
+            else:
+                return iso_date
+        except ValueError:
+            print("Data non valida. Es. 20/03/2025.")
 
 
 def select_game_index(games: list[Game]) -> int | None:

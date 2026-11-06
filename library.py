@@ -13,6 +13,7 @@ def today_iso() -> str:
     today = date.today()
     return today.isoformat()
 
+
 def find_game_indices_by_title(games: list[Game], query: str) -> list[int]:
     """Restituisce gli indici dei giochi il cui titolo contiene il testo cercato."""
     matching_indices = []
@@ -62,3 +63,11 @@ def apply_status_change(game: Game, new_status: str, today: str) -> None:
         if game.start_date is None:
             game.start_date = today
         game.completion_date = None
+
+
+def is_valid_date_order(start_date: str | None, completion_date: str | None) -> bool:
+    """Indica se il completamento non precede l'inizio; sempre vero se manca una delle due date."""
+    if start_date is None or completion_date is None:
+        return True
+    return completion_date >= start_date
+

@@ -3,6 +3,7 @@ from library import (
     find_game_indices_by_status,
     find_game_indices_by_title,
     is_duplicate_game,
+    is_valid_date_order,
 )
 from models import Game
 
@@ -144,3 +145,12 @@ def test_returning_to_backlog_clears_dates_and_rating():
     assert game.status == "backlog"
     assert game.start_date is None
     assert game.rating is None
+
+
+def test_completion_before_start_is_invalid():
+    assert not is_valid_date_order("2026-03-10", "2026-01-05")
+
+
+def test_missing_date_is_always_valid_order():
+    assert is_valid_date_order(None, "2026-01-05")
+    assert is_valid_date_order("2026-03-10", None)
