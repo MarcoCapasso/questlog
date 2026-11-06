@@ -8,9 +8,11 @@ from display import (
     print_search_results,
 )
 from library import (
+    apply_status_change,
     find_game_indices_by_status,
     find_game_indices_by_title,
     is_duplicate_game,
+    today_iso,
 )
 from models import Game
 from prompts import (
@@ -109,14 +111,18 @@ def edit_game_platform(games: list[Game], game_index: int) -> None:
 
 
 def edit_game_status(game: Game) -> None:
-    """Modifica lo stato di un gioco rispettando le regole sulle ore."""
+    """Modifica lo stato di un gioco rispettando le regole su ore, date e voto."""
     new_status = ask_status()
     if new_status == "backlog":
         if game.hours_played > 0:
             print("Un gioco iniziato non può tornare in backlog.")
-        else:
-            game.status = new_status
-            print(f"Stato aggiornato in '{new_status}'.")
+            return
+        if game.start_date is not None or game.rating is not None:
+            if not ask_confirmation("Il gioco tornerà in backlog: voto e data di inizio verranno rimossi. Confermi? (s/n) "):
+                print("Nessuna modifica effettuata.")
+                return
+        apply_status_change(game, new_status, today_iso())
+        print(f"Stato aggiornato in '{new_status}'.")
     elif new_status == "completed":
         if game.hours_played > 0:
             current_hours = game.hours_played
@@ -124,10 +130,14 @@ def edit_game_status(game: Game) -> None:
                 game.hours_played = ask_hours_played(allow_zero=False)
         else:
             game.hours_played = ask_hours_played(allow_zero=False)
-        game.status = new_status
+        apply_status_change(game, new_status, today_iso())
         print(f"Stato aggiornato in '{new_status}', ore: {game.hours_played:g}.")
     else:
-        game.status = new_status
+        if game.status == "completed" and game.completion_date is not None:
+            if not ask_confirmation("Il gioco non sarà più completato e la data di completamento verrà rimossa. Confermi? (s/n) "):
+                print("Nessuna modifica effettuata.")
+                return
+        apply_status_change(game, new_status, today_iso())
         print(f"Stato aggiornato in '{new_status}'.")
 
 
@@ -136,7 +146,7 @@ def edit_game_hours(game: Game) -> None:
     if game.status == "backlog":
         if ask_confirmation("Il gioco passerà da 'backlog' a 'playing'. Confermi? (s/n) "):
             game.hours_played = ask_hours_played(allow_zero=False)
-            game.status = "playing"
+            apply_status_change(game, "playing", today_iso())
             print(f"Stato aggiornato in 'playing', ore: {game.hours_played:g}.")
         else:
             print("Nessuna modifica effettuata.")
