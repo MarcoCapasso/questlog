@@ -16,6 +16,7 @@ from prompts import (
     ask_confirmation,
     ask_hours_played,
     ask_non_empty_text,
+    ask_rating,
     ask_status,
     select_game_index,
 )
@@ -31,15 +32,19 @@ def add_game(games: list[Game]) -> None:
         status = ask_status()
         if status == "backlog":
             hours_played = 0.0
+            rating = None
         elif status == "completed":
             hours_played = ask_hours_played(allow_zero=False)
+            rating = ask_rating()
         else:
             hours_played = ask_hours_played()
+            rating = ask_rating()
         game = Game(
             title=title,
             platform=platform,
             status=status,
             hours_played=hours_played,
+            rating=rating,
         )
         games.append(game)
         print(f"'{title}' aggiunto alla libreria.")

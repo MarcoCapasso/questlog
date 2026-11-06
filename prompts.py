@@ -70,6 +70,24 @@ def ask_confirmation(prompt: str) -> bool:
     return answer_confirm == "s"
 
 
+def ask_rating() -> float | None:
+    """Chiede un voto da 1 a 10 a mezzi punti; restituisce None se l'utente preme Invio."""
+    while True:
+        rating_text = input("Voto (1-10, Invio per saltare): ").strip()
+        if rating_text == "":
+            return None
+        try:
+            rating = float(rating_text)
+            if not 1 <= rating <= 10:
+                print("Inserire un voto tra (1-10). Mezzi voti ammessi.")
+            elif not (rating * 2).is_integer():
+                print("Sono ammessi solo voti interi o mezzi punti (es. 7.5).")
+            else:
+                return rating
+        except ValueError:
+            print("Inserire un numero.")
+
+
 def select_game_index(games: list[Game]) -> int | None:
     """Mostra la libreria e restituisce l'indice scelto, oppure None se la libreria è vuota."""
     print_library(games)

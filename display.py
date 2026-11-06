@@ -56,8 +56,12 @@ def print_search_results(games: list[Game], matching_indices: list[int], query: 
 
 
 def format_game_line(game: Game) -> str:
-    """Restituisce la descrizione di un gioco su una riga; le ore non compaiono per il backlog."""
+    """Restituisce la descrizione di un gioco su una riga; le ore e il voto non compaiono per il backlog."""
     if game.status == "backlog":
         return f"{game.title} ({game.platform}) | {game.status}"
+
+    if game.rating is None:
+        rating_text = "-"
     else:
-        return f"{game.title} ({game.platform}) | {game.status} | {game.hours_played:g} ore"
+        rating_text = f"{game.rating:g}"
+    return f"{game.title} ({game.platform}) | {game.status} | {game.hours_played:g} ore | voto: {rating_text}"
