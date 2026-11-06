@@ -1,6 +1,7 @@
 """Operazioni del menu: aggiunta, modifica, eliminazione e ricerca."""
 
 from display import (
+    format_date,
     format_game_line,
     format_rating,
     print_edit_menu,
@@ -12,11 +13,14 @@ from library import (
     find_game_indices_by_status,
     find_game_indices_by_title,
     is_duplicate_game,
+    is_valid_date_order,
     today_iso,
 )
 from models import Game
 from prompts import (
+    ask_completion_date,
     ask_confirmation,
+    ask_date,
     ask_hours_played,
     ask_non_empty_text,
     ask_rating,
@@ -31,26 +35,32 @@ def add_game(games: list[Game]) -> None:
     platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
     if is_duplicate_game(games, title, platform):
         print(f"'{title}' su {platform} è già presente in libreria.")
-    else:
-        status = ask_status()
-        if status == "backlog":
-            hours_played = 0.0
-            rating = None
-        elif status == "completed":
+        return
+    status = ask_status()
+    hours_played = 0.0
+    rating = None
+    start_date = None
+    completion_date = None
+    if status != "backlog":
+        if status == "completed":
             hours_played = ask_hours_played(allow_zero=False)
-            rating = ask_rating("Voto (1-10, Invio per saltare): ")
         else:
             hours_played = ask_hours_played()
-            rating = ask_rating("Voto (1-10, Invio per saltare): ")
-        game = Game(
-            title=title,
-            platform=platform,
-            status=status,
-            hours_played=hours_played,
-            rating=rating,
-        )
-        games.append(game)
-        print(f"'{title}' aggiunto alla libreria.")
+        rating = ask_rating("Voto (1-10, Invio per saltare): ")
+        start_date = ask_date("Data di inizio (GG/MM/AAAA, Invio per saltare): ")
+    if status == "completed":
+        completion_date = ask_completion_date("Data di completamento (GG/MM/AAAA, Invio per saltare): ", start_date)
+    game = Game(
+        title=title,
+        platform=platform,
+        status=status,
+        hours_played=hours_played,
+        rating=rating,
+        start_date=start_date,
+        completion_date=completion_date,
+    )
+    games.append(game)
+    print(f"'{title}' aggiunto alla libreria.")
 
 
 def delete_game(games: list[Game]) -> None:
@@ -84,6 +94,8 @@ def edit_game(games: list[Game]) -> None:
             edit_game_hours(selected_game)
         elif field_choice == "5":
             edit_game_rating(selected_game)
+        elif field_choice == "6":
+            edit_game_dates(selected_game)
         else:
             print("Inserisci una scelta valida.")
 
@@ -161,14 +173,38 @@ def edit_game_hours(game: Game) -> None:
 def edit_game_rating(game: Game) -> None:
     """Modifica il voto di un gioco; un gioco in backlog non può avere un voto."""
     if game.status == "backlog":
-        print("Un gioco in backlog non può avere un voto: cambia prima lo stato")
+        print("Un gioco in backlog non può avere un voto: cambia prima lo stato.")
     else:
         new_rating = ask_rating(f"Nuovo voto (attuale: {format_rating(game.rating)}, Invio per lasciarlo): ")
         if new_rating is None:
-            print("Nessuna modifica effettuata")
+            print("Nessuna modifica effettuata.")
         else:
             game.rating = new_rating
-            print(f"Voto aggiornato: {format_rating(game.rating)}")
+            print(f"Voto aggiornato: {format_rating(game.rating)}.")
+
+
+def edit_game_dates(game: Game) -> None:
+    """Modifica le date di un gioco; Invio lascia la data invariata."""
+    if game.status == "backlog":
+        print("Un gioco in backlog non ha date: cambia prima lo stato.")
+        return
+    new_start_date = ask_date(f"Data di inizio (attuale: {format_date(game.start_date)}, Invio per lasciarla): ")
+    if new_start_date is None:
+        new_start_date = game.start_date
+    new_completion_date = game.completion_date
+    if game.status == "completed":
+        entered_date = ask_date(f"Data di completamento (attuale: {format_date(game.completion_date)}, Invio per lasciarla): ")
+        if entered_date is not None:
+            new_completion_date = entered_date
+    if not is_valid_date_order(new_start_date, new_completion_date):
+        print("La data di completamento non può precedere la data di inizio. Nessuna modifica effettuata.")
+        return
+    if new_start_date == game.start_date and new_completion_date == game.completion_date:
+        print("Nessuna modifica effettuata.")
+        return
+    game.start_date = new_start_date
+    game.completion_date = new_completion_date
+    print(f"Date aggiornate: inizio {format_date(game.start_date)}, completamento {format_date(game.completion_date)}.")
 
 
 def search_games(games: list[Game]) -> None:

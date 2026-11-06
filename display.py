@@ -1,5 +1,7 @@
 """Stampa di menu, libreria e risultati nel terminale."""
 
+from datetime import date
+
 from models import Game
 
 
@@ -24,6 +26,7 @@ def print_edit_menu() -> None:
     print("3. Stato")
     print("4. Ore")
     print("5. Voto")
+    print("6. Date")
 
 
 def print_search_menu() -> None:
@@ -60,7 +63,6 @@ def format_game_line(game: Game) -> str:
     """Restituisce la descrizione di un gioco su una riga; le ore e il voto non compaiono per il backlog."""
     if game.status == "backlog":
         return f"{game.title} ({game.platform}) | {game.status}"
-
     return f"{game.title} ({game.platform}) | {game.status} | {game.hours_played:g} ore | voto: {format_rating(game.rating)}"
 
 
@@ -70,3 +72,10 @@ def format_rating(rating: float | None) -> str:
         return "-"
     else:
         return f"{rating:g}"
+
+
+def format_date(iso_date: str | None) -> str:
+    """Restituisce una data ISO nel formato GG/MM/AAAA, oppure un trattino se manca."""
+    if iso_date is None:
+        return "-"
+    return date.fromisoformat(iso_date).strftime("%d/%m/%Y")

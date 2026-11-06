@@ -4,7 +4,7 @@ import math
 from datetime import datetime
 
 from display import print_library
-from library import ALLOWED_STATUSES, today_iso
+from library import ALLOWED_STATUSES, is_valid_date_order, today_iso
 from models import Game
 
 
@@ -80,13 +80,13 @@ def ask_rating(prompt: str) -> float | None:
         try:
             rating = float(rating_text)
             if not 1 <= rating <= 10:
-                print("Il voto deve essere tra 1 e 10.")
+                print("Inserire un voto tra (1-10). Mezzi voti ammessi.")
             elif not (rating * 2).is_integer():
                 print("Sono ammessi solo voti interi o mezzi punti (es. 7.5).")
             else:
                 return rating
         except ValueError:
-            print("Inserisci un numero.")
+            print("Inserire un numero.")
 
 
 def ask_date(prompt: str) -> str | None:
@@ -104,6 +104,15 @@ def ask_date(prompt: str) -> str | None:
                 return iso_date
         except ValueError:
             print("Data non valida. Es. 20/03/2025.")
+
+
+def ask_completion_date(prompt: str, start_date: str | None) -> str | None:
+    """Chiede la data di completamento finché non precede la data di inizio; None se l'utente preme Invio."""
+    while True:
+        completion_date = ask_date(prompt)
+        if is_valid_date_order(start_date, completion_date):
+            return completion_date
+        print("La data di completamento non può precedere la data di inizio.")
 
 
 def select_game_index(games: list[Game]) -> int | None:
