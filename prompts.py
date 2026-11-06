@@ -70,7 +70,7 @@ def ask_confirmation(prompt: str) -> bool:
     return answer_confirm == "s"
 
 
-def ask_rating() -> float | None:
+def ask_rating(prompt: str) -> float | None:
     """Chiede un voto da 1 a 10 a mezzi punti; restituisce None se l'utente preme Invio."""
     while True:
         rating_text = input("Voto (1-10, Invio per saltare): ").strip()

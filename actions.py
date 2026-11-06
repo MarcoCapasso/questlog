@@ -2,6 +2,7 @@
 
 from display import (
     format_game_line,
+    format_rating,
     print_edit_menu,
     print_search_menu,
     print_search_results,
@@ -35,10 +36,10 @@ def add_game(games: list[Game]) -> None:
             rating = None
         elif status == "completed":
             hours_played = ask_hours_played(allow_zero=False)
-            rating = ask_rating()
+            rating = ask_rating("Voto (1-10, Invio per saltare): ")
         else:
             hours_played = ask_hours_played()
-            rating = ask_rating()
+            rating = ask_rating("Voto (1-10, Invio per saltare): ")
         game = Game(
             title=title,
             platform=platform,
@@ -79,6 +80,8 @@ def edit_game(games: list[Game]) -> None:
             edit_game_status(selected_game)
         elif field_choice == "4":
             edit_game_hours(selected_game)
+        elif field_choice == "5":
+            edit_game_rating(selected_game)
         else:
             print("Inserisci una scelta valida.")
 
@@ -143,6 +146,19 @@ def edit_game_hours(game: Game) -> None:
     else:
         game.hours_played = ask_hours_played()
         print(f"Ore aggiornate: {game.hours_played:g}.")
+
+
+def edit_game_rating(game: Game) -> None:
+    """Modifica il voto di un gioco; un gioco in backlog non può avere un voto."""
+    if game.status == "backlog":
+        print("Un gioco in backlog non può avere un voto: cambia prima lo stato")
+    else:
+        new_rating = ask_rating(f"Nuovo voto (attuale: {format_rating(game.rating)}, Invio per lasciarlo): ")
+        if new_rating is None:
+            print("Nessuna modifica effettuata")
+        else:
+            game.rating = new_rating
+            print(f"Voto aggiornato: {format_rating(game.rating)}")
 
 
 def search_games(games: list[Game]) -> None:

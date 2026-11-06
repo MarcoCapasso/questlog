@@ -23,6 +23,7 @@ def print_edit_menu() -> None:
     print("2. Piattaforma")
     print("3. Stato")
     print("4. Ore")
+    print("5. Voto")
 
 
 def print_search_menu() -> None:
@@ -60,8 +61,12 @@ def format_game_line(game: Game) -> str:
     if game.status == "backlog":
         return f"{game.title} ({game.platform}) | {game.status}"
 
-    if game.rating is None:
-        rating_text = "-"
+    return f"{game.title} ({game.platform}) | {game.status} | {game.hours_played:g} ore | voto: {format_rating(game.rating)}"
+
+
+def format_rating(rating: float | None) -> str:
+    """Restituisce il voto formattato, oppure un trattino se manca."""
+    if rating is None:
+        return "-"
     else:
-        rating_text = f"{game.rating:g}"
-    return f"{game.title} ({game.platform}) | {game.status} | {game.hours_played:g} ore | voto: {rating_text}"
+        return f"{rating:g}"
