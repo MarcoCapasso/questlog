@@ -1,9 +1,17 @@
 """Regole e ricerche sulla libreria, senza interazione con l'utente."""
 
+from datetime import date
+
 from models import Game
+
 
 ALLOWED_STATUSES = ["backlog", "playing", "completed", "dropped"]
 
+
+def today_iso() -> str:
+    """Restituisce la data di oggi in formato ISO (AAAA-MM-GG)."""
+    today = date.today()
+    return today.isoformat()
 
 def find_game_indices_by_title(games: list[Game], query: str) -> list[int]:
     """Restituisce gli indici dei giochi il cui titolo contiene il testo cercato."""
@@ -26,12 +34,7 @@ def find_game_indices_by_status(games: list[Game], status: str) -> list[int]:
     return matching_indices
 
 
-def is_duplicate_game(
-    games: list[Game],
-    title: str,
-    platform: str,
-    ignore_index: int | None = None,
-) -> bool:
+def is_duplicate_game(games: list[Game], title: str, platform: str, ignore_index: int | None = None,) -> bool:
     """Indica se esiste già un gioco con stesso titolo e piattaforma, escluso ignore_index."""
     for index, game in enumerate(games):
         if index == ignore_index:
@@ -41,3 +44,21 @@ def is_duplicate_game(
         if same_title and same_platform:
             return True
     return False
+
+
+def apply_status_change(game: Game, new_status: str, today: str) -> None:
+    """Cambia lo stato di un gioco e aggiorna date e voto secondo le regole."""
+    game.status = new_status
+    if new_status == "backlog":
+        game.start_date = None
+        game.completion_date = None
+        game.rating = None
+    elif new_status == "completed":
+        if game.start_date is None:
+            game.start_date = today
+        if game.completion_date is None:
+            game.completion_date = today
+    else:
+        if game.start_date is None:
+            game.start_date = today
+        game.completion_date = None

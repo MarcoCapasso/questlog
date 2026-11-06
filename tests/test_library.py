@@ -1,4 +1,5 @@
 from library import (
+    apply_status_change,
     find_game_indices_by_status,
     find_game_indices_by_title,
     is_duplicate_game,
@@ -6,13 +7,27 @@ from library import (
 from models import Game
 
 
+TODAY = "2026-11-06"
+
+
 def make_game(
     title: str,
     platform: str = "PC",
     status: str = "backlog",
     hours_played: float = 0.0,
+    rating: float | None = None,
+    start_date: str | None = None,
+    completion_date: str | None = None,
 ) -> Game:
-    return Game(title, platform, status, hours_played)
+    return Game(
+        title=title,
+        platform=platform,
+        status=status,
+        hours_played=hours_played,
+        rating=rating,
+        start_date=start_date,
+        completion_date=completion_date,
+    )
 
 
 def test_find_by_title_is_case_insensitive():
@@ -91,3 +106,41 @@ def test_duplicate_ignores_game_being_edited():
     ]
     assert not is_duplicate_game(games, "halo", "PC", ignore_index=0)
     assert is_duplicate_game(games, "doom", "PC", ignore_index=0)
+
+
+def test_starting_backlog_game_sets_start_date():
+    game = make_game("Halo", status="backlog")
+    apply_status_change(game, "playing", TODAY)
+    assert game.status == "playing"
+    assert game.start_date == TODAY
+    assert game.completion_date is None
+
+
+def test_completing_game_keeps_existing_start_date():
+    game = make_game("Halo", status="playing", hours_played=10.0, start_date="2026-01-10")
+    apply_status_change(game, "completed", TODAY)
+    assert game.status == "completed"
+    assert game.start_date == "2026-01-10"
+    assert game.completion_date == TODAY
+
+
+def test_reopening_completed_game_removes_completion_date():
+    game = make_game(
+        "Halo",
+        status="completed",
+        hours_played=30.0,
+        start_date="2026-01-10",
+        completion_date="2026-03-02",
+    )
+    apply_status_change(game, "playing", TODAY)
+    assert game.status == "playing"
+    assert game.start_date == "2026-01-10"
+    assert game.completion_date is None
+
+
+def test_returning_to_backlog_clears_dates_and_rating():
+    game = make_game("Halo", status="playing", rating=7.5, start_date="2026-01-10")
+    apply_status_change(game, "backlog", TODAY)
+    assert game.status == "backlog"
+    assert game.start_date is None
+    assert game.rating is None
