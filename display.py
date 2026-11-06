@@ -2,7 +2,8 @@
 
 from datetime import date
 
-from models import Game
+from library import calculate_total_hours, has_completed_playthrough, is_backlog
+from models import Game, Playthrough
 
 
 def print_menu() -> None:
@@ -11,23 +12,32 @@ def print_menu() -> None:
     print("--- Questlog ---")
     print("1. Aggiungi gioco")
     print("2. Mostra libreria")
-    print("3. Dettagli gioco")
+    print("3. Apri gioco")
     print("4. Cerca gioco")
-    print("5. Modifica gioco")
-    print("6. Elimina gioco")
-    print("7. Esci")
+    print("5. Esci")
 
 
-def print_edit_menu() -> None:
-    """Mostra i campi modificabili di un gioco."""
+def print_game_menu() -> None:
+    """Mostra le azioni disponibili su un gioco aperto."""
     print()
-    print("--- Modifica ---")
-    print("1. Titolo")
-    print("2. Piattaforma")
-    print("3. Stato")
-    print("4. Ore")
-    print("5. Voto")
-    print("6. Date")
+    print("--- Azioni ---")
+    print("1. Aggiungi partita")
+    print("2. Modifica partita")
+    print("3. Elimina partita")
+    print("4. Modifica titolo")
+    print("5. Modifica voto")
+    print("6. Elimina gioco")
+    print("7. Torna alla libreria")
+
+
+def print_playthrough_edit_menu() -> None:
+    """Mostra i campi modificabili di una partita."""
+    print()
+    print("--- Modifica partita ---")
+    print("1. Piattaforma")
+    print("2. Stato")
+    print("3. Ore")
+    print("4. Date")
 
 
 def print_search_menu() -> None:
@@ -61,30 +71,59 @@ def print_search_results(games: list[Game], matching_indices: list[int], query: 
 
 
 def print_game_details(game: Game) -> None:
-    """Mostra tutti i campi di un gioco, con un trattino per quelli mancanti."""
+    """Mostra la scheda di un gioco con l'elenco delle sue partite."""
     print()
     print(f"--- {game.title} ---")
-    print(f"{'Piattaforma:':<16}{game.platform}")
-    print(f"{'Stato:':<16}{game.status}")
-    print(f"{'Ore giocate:':<16}{game.hours_played:g}")
     print(f"{'Voto:':<16}{format_rating(game.rating)}")
-    print(f"{'Inizio:':<16}{format_date(game.start_date)}")
-    print(f"{'Completamento:':<16}{format_date(game.completion_date)}")
+    print(f"{'Ore totali:':<16}{calculate_total_hours(game):g}")
+    print()
+    if is_backlog(game):
+        print("Nessuna partita: il gioco è in backlog.")
+    else:
+        print_playthroughs(game)
+
+
+def print_playthroughs(game: Game) -> None:
+    """Mostra le partite di un gioco, numerate."""
+    print("Partite")
+    for position, playthrough in enumerate(game.playthroughs, start=1):
+        print(f"{position}. {format_playthrough_line(playthrough)}")
 
 
 def format_game_line(game: Game) -> str:
-    """Restituisce la descrizione di un gioco su una riga; le ore e il voto non compaiono per il backlog."""
-    if game.status == "backlog":
-        return f"{game.title} ({game.platform}) | {game.status}"
-    return f"{game.title} ({game.platform}) | {game.status} | {game.hours_played:g} ore | voto: {format_rating(game.rating)}"
+    """Restituisce la descrizione di un gioco su una riga; un segno di spunta indica che è stato completato."""
+    if is_backlog(game):
+        return f"{game.title} | backlog"
+    title = game.title
+    if has_completed_playthrough(game):
+        title = f"{title} ✓"
+    return (
+        f"{title} | {format_playthrough_count(game)} | "
+        f"{calculate_total_hours(game):g} ore | voto: {format_rating(game.rating)}"
+    )
+
+
+def format_playthrough_count(game: Game) -> str:
+    """Restituisce il numero di partite al singolare o al plurale."""
+    count = len(game.playthroughs)
+    if count == 1:
+        return "1 partita"
+    return f"{count} partite"
+
+
+def format_playthrough_line(playthrough: Playthrough) -> str:
+    """Restituisce la descrizione di una partita su una riga."""
+    return (
+        f"{playthrough.platform} | {playthrough.status} | {playthrough.hours_played:g} ore | "
+        f"{format_date(playthrough.start_date)} → {format_date(playthrough.completion_date)}"
+    )
 
 
 def format_rating(rating: float | None) -> str:
     """Restituisce il voto formattato, oppure un trattino se manca."""
     if rating is None:
         return "-"
-    else:
-        return f"{rating:g}"
+    return f"{rating:g}"
 
 
 def format_date(iso_date: str | None) -> str:

@@ -1,23 +1,26 @@
-"""Operazioni del menu: aggiunta, modifica, eliminazione e ricerca."""
+"""Azioni del menu: coordinano richieste, regole, stampa e salvataggio."""
 
 from display import (
-    format_date,
-    format_game_line,
-    format_rating,
-    print_edit_menu,
     print_game_details,
+    print_game_menu,
+    print_library,
+    print_playthrough_edit_menu,
     print_search_menu,
     print_search_results,
 )
 from library import (
+    PLAYTHROUGH_STATUSES,
+    SEARCH_STATUSES,
     apply_status_change,
+    find_game_index_by_title,
     find_game_indices_by_status,
     find_game_indices_by_title,
-    is_duplicate_game,
+    is_backlog,
     is_valid_date_order,
+    remove_playthrough,
     today_iso,
 )
-from models import Game
+from models import Game, Playthrough
 from prompts import (
     ask_completion_date,
     ask_confirmation,
@@ -27,205 +30,227 @@ from prompts import (
     ask_rating,
     ask_status,
     select_game_index,
+    select_playthrough_index,
 )
+from storage import save_library
+
+
+def ask_new_playthrough() -> Playthrough:
+    """Chiede i dati di una nuova partita; le date lasciate vuote diventano oggi dove servono."""
+    platform = ask_non_empty_text("Piattaforma: ")
+    status = ask_status(PLAYTHROUGH_STATUSES)
+    hours_played = ask_hours_played(allow_zero=status != "completed")
+    start_date = ask_date("Data inizio (GG/MM/AAAA, Invio = oggi): ")
+    completion_date = None
+    if status == "completed":
+        completion_date = ask_completion_date("Data completamento (GG/MM/AAAA, Invio = oggi): ", start_date)
+
+    playthrough = Playthrough(platform, status, hours_played, start_date, completion_date)
+    apply_status_change(playthrough, status, today_iso())
+    return playthrough
 
 
 def add_game(games: list[Game]) -> None:
-    """Chiede i dati di un nuovo gioco e lo aggiunge alla libreria, se non è un duplicato."""
-    title = ask_non_empty_text("Inserisci il titolo del gioco: ")
-    platform = ask_non_empty_text("Inserisci la piattaforma del gioco: ")
-    if is_duplicate_game(games, title, platform):
-        print(f"'{title}' su {platform} è già presente in libreria.")
-        return
-    status = ask_status()
-    hours_played = 0.0
-    rating = None
-    start_date = None
-    completion_date = None
-    if status != "backlog":
-        if status == "completed":
-            hours_played = ask_hours_played(allow_zero=False)
+    """Aggiunge un gioco; se il titolo esiste già propone di aggiungergli una partita."""
+    title = ask_non_empty_text("Titolo: ")
+    existing_index = find_game_index_by_title(games, title)
+
+    if existing_index is not None:
+        existing_game = games[existing_index]
+        if ask_confirmation(f"'{existing_game.title}' è già in libreria. Aggiungere una nuova partita? (s/n): "):
+            existing_game.playthroughs.append(ask_new_playthrough())
+            save_library(games)
+            print("Partita aggiunta.")
         else:
-            hours_played = ask_hours_played()
-        rating = ask_rating("Voto (1-10, Invio per saltare): ")
-        start_date = ask_date("Data di inizio (GG/MM/AAAA, Invio per saltare): ")
-    if status == "completed":
-        completion_date = ask_completion_date("Data di completamento (GG/MM/AAAA, Invio per saltare): ", start_date)
-    game = Game(
-        title=title,
-        platform=platform,
-        status=status,
-        hours_played=hours_played,
-        rating=rating,
-        start_date=start_date,
-        completion_date=completion_date,
-    )
+            print("Nessuna modifica.")
+        return
+
+    game = Game(title)
+    if ask_confirmation("Hai già iniziato a giocarci? (s/n): "):
+        game.playthroughs.append(ask_new_playthrough())
+        game.rating = ask_rating("Voto (1-10, Invio per saltare): ")
     games.append(game)
-    print(f"'{title}' aggiunto alla libreria.")
+    save_library(games)
+    print(f"'{game.title}' aggiunto alla libreria.")
 
 
-def delete_game(games: list[Game]) -> None:
-    """Fa scegliere un gioco e lo elimina dopo conferma."""
-    game_index = select_game_index(games)
-    if game_index is not None:
-        selected_game = games[game_index]
-        confirm_delete = ask_confirmation(f"Sei sicuro di voler eliminare '{format_game_line(selected_game)}'? (s/n) ")
-        if confirm_delete:
-            games.pop(game_index)
-            print(f"'{selected_game.title}' eliminato dalla libreria.")
-        else:
-            print("Nessun gioco eliminato.")
-
-
-def show_game_details(games: list[Game]) -> None:
-    """Fa scegliere un gioco e ne mostra la scheda completa."""
-    game_index = select_game_index(games)
-    if game_index is not None:
-        print_game_details(games[game_index])
-
-
-def edit_game(games: list[Game]) -> None:
-    """Fa scegliere un gioco e il campo da modificare."""
-    game_index = select_game_index(games)
-    if game_index is not None:
-        selected_game = games[game_index]
-        print(f"Hai selezionato '{selected_game.title}'.")
-        print_edit_menu()
-        field_choice = ask_non_empty_text("Quale campo vuoi modificare? ")
-        if field_choice == "1":
-            edit_game_title(games, game_index)
-        elif field_choice == "2":
-            edit_game_platform(games, game_index)
-        elif field_choice == "3":
-            edit_game_status(selected_game)
-        elif field_choice == "4":
-            edit_game_hours(selected_game)
-        elif field_choice == "5":
-            edit_game_rating(selected_game)
-        elif field_choice == "6":
-            edit_game_dates(selected_game)
-        else:
-            print("Inserisci una scelta valida.")
-
-
-def edit_game_title(games: list[Game], game_index: int) -> None:
-    """Modifica il titolo di un gioco, rifiutando i duplicati."""
-    selected_game = games[game_index]
-    new_title = ask_non_empty_text("Inserisci il nuovo titolo: ")
-    if is_duplicate_game(games, new_title, selected_game.platform, ignore_index=game_index):
-        print(f"'{new_title}' su {selected_game.platform} è già presente in libreria.")
-    else:
-        selected_game.title = new_title
-        print(f"Titolo aggiornato in '{new_title}'.")
-
-
-def edit_game_platform(games: list[Game], game_index: int) -> None:
-    """Modifica la piattaforma di un gioco, rifiutando i duplicati."""
-    selected_game = games[game_index]
-    new_platform = ask_non_empty_text("Inserisci la nuova piattaforma: ")
-    if is_duplicate_game(games, selected_game.title, new_platform, ignore_index=game_index):
-        print(f"'{selected_game.title}' su {new_platform} è già presente in libreria.")
-    else:
-        selected_game.platform = new_platform
-        print(f"Piattaforma aggiornata in '{new_platform}'.")
-
-
-def edit_game_status(game: Game) -> None:
-    """Modifica lo stato di un gioco rispettando le regole su ore, date e voto."""
-    new_status = ask_status()
-    if new_status == "backlog":
-        if game.hours_played > 0:
-            print("Un gioco iniziato non può tornare in backlog.")
-            return
-        if game.start_date is not None or game.rating is not None:
-            if not ask_confirmation("Il gioco tornerà in backlog: voto e data di inizio verranno rimossi. Confermi? (s/n) "):
-                print("Nessuna modifica effettuata.")
-                return
-        apply_status_change(game, new_status, today_iso())
-        print(f"Stato aggiornato in '{new_status}'.")
-    elif new_status == "completed":
-        if game.hours_played > 0:
-            current_hours = game.hours_played
-            if ask_confirmation(f"Vuoi aggiornare le ore? Attuali: {current_hours:g} (s/n) "):
-                game.hours_played = ask_hours_played(allow_zero=False)
-        else:
-            game.hours_played = ask_hours_played(allow_zero=False)
-        apply_status_change(game, new_status, today_iso())
-        print(f"Stato aggiornato in '{new_status}', ore: {game.hours_played:g}.")
-    else:
-        if game.status == "completed" and game.completion_date is not None:
-            if not ask_confirmation("Il gioco non sarà più completato e la data di completamento verrà rimossa. Confermi? (s/n) "):
-                print("Nessuna modifica effettuata.")
-                return
-        apply_status_change(game, new_status, today_iso())
-        print(f"Stato aggiornato in '{new_status}'.")
-
-
-def edit_game_hours(game: Game) -> None:
-    """Modifica le ore di un gioco; un gioco in backlog passa a playing dopo conferma."""
-    if game.status == "backlog":
-        if ask_confirmation("Il gioco passerà da 'backlog' a 'playing'. Confermi? (s/n) "):
-            game.hours_played = ask_hours_played(allow_zero=False)
-            apply_status_change(game, "playing", today_iso())
-            print(f"Stato aggiornato in 'playing', ore: {game.hours_played:g}.")
-        else:
-            print("Nessuna modifica effettuata.")
-    elif game.status == "completed":
-        game.hours_played = ask_hours_played(allow_zero=False)
-        print(f"Ore aggiornate: {game.hours_played:g}.")
-    else:
-        game.hours_played = ask_hours_played()
-        print(f"Ore aggiornate: {game.hours_played:g}.")
-
-
-def edit_game_rating(game: Game) -> None:
-    """Modifica il voto di un gioco; un gioco in backlog non può avere un voto."""
-    if game.status == "backlog":
-        print("Un gioco in backlog non può avere un voto: cambia prima lo stato.")
-    else:
-        new_rating = ask_rating(f"Nuovo voto (attuale: {format_rating(game.rating)}, Invio per lasciarlo): ")
-        if new_rating is None:
-            print("Nessuna modifica effettuata.")
-        else:
-            game.rating = new_rating
-            print(f"Voto aggiornato: {format_rating(game.rating)}.")
-
-
-def edit_game_dates(game: Game) -> None:
-    """Modifica le date di un gioco; Invio lascia la data invariata."""
-    if game.status == "backlog":
-        print("Un gioco in backlog non ha date: cambia prima lo stato.")
-        return
-    new_start_date = ask_date(f"Data di inizio (attuale: {format_date(game.start_date)}, Invio per lasciarla): ")
-    if new_start_date is None:
-        new_start_date = game.start_date
-    new_completion_date = game.completion_date
-    if game.status == "completed":
-        entered_date = ask_date(f"Data di completamento (attuale: {format_date(game.completion_date)}, Invio per lasciarla): ")
-        if entered_date is not None:
-            new_completion_date = entered_date
-    if not is_valid_date_order(new_start_date, new_completion_date):
-        print("La data di completamento non può precedere la data di inizio. Nessuna modifica effettuata.")
-        return
-    if new_start_date == game.start_date and new_completion_date == game.completion_date:
-        print("Nessuna modifica effettuata.")
-        return
-    game.start_date = new_start_date
-    game.completion_date = new_completion_date
-    print(f"Date aggiornate: inizio {format_date(game.start_date)}, completamento {format_date(game.completion_date)}.")
+def show_library(games: list[Game]) -> None:
+    """Mostra la libreria."""
+    print_library(games)
 
 
 def search_games(games: list[Game]) -> None:
-    """Fa scegliere il criterio di ricerca e mostra i giochi trovati."""
+    """Cerca i giochi per titolo o per stato e mostra i risultati."""
+    if len(games) == 0:
+        print("Libreria vuota, aggiungi prima qualche gioco.")
+        return
+
     print_search_menu()
-    search_choice = ask_non_empty_text("Filtra per: ")
-    if search_choice == "1":
-        search_text = ask_non_empty_text("Cerca un titolo: ")
-        matching_indices = find_game_indices_by_title(games, search_text)
-        print_search_results(games, matching_indices, search_text)
-    elif search_choice == "2":
-        selected_status = ask_status()
-        matching_indices = find_game_indices_by_status(games, selected_status)
-        print_search_results(games, matching_indices, selected_status)
+    choice = input("Scegli un'opzione: ").strip()
+    if choice == "1":
+        query = ask_non_empty_text("Testo da cercare nel titolo: ")
+        print_search_results(games, find_game_indices_by_title(games, query), query)
+    elif choice == "2":
+        status = ask_status(SEARCH_STATUSES)
+        print_search_results(games, find_game_indices_by_status(games, status), status)
     else:
-        print("Inserisci una scelta valida.")
+        print("Opzione non valida.")
+
+
+def open_game(games: list[Game]) -> None:
+    """Apre la scheda di un gioco e gestisce le sue azioni finché l'utente torna alla libreria."""
+    game_index = select_game_index(games)
+    if game_index is None:
+        return
+    game = games[game_index]
+
+    while True:
+        print_game_details(game)
+        print_game_menu()
+        choice = input("Scegli un'opzione: ").strip()
+
+        if choice == "1":
+            add_playthrough(games, game)
+        elif choice == "2":
+            edit_playthrough(games, game)
+        elif choice == "3":
+            delete_playthrough(games, game)
+        elif choice == "4":
+            edit_title(games, game_index)
+        elif choice == "5":
+            edit_rating(games, game)
+        elif choice == "6":
+            if delete_game(games, game_index):
+                return
+        elif choice == "7":
+            return
+        else:
+            print("Opzione non valida.")
+
+
+def add_playthrough(games: list[Game], game: Game) -> None:
+    """Aggiunge una partita al gioco; se era in backlog propone anche il voto."""
+    was_backlog = is_backlog(game)
+    game.playthroughs.append(ask_new_playthrough())
+    if was_backlog:
+        game.rating = ask_rating("Voto (1-10, Invio per saltare): ")
+    save_library(games)
+    print("Partita aggiunta.")
+
+
+def delete_playthrough(games: list[Game], game: Game) -> None:
+    """Elimina una partita dopo conferma; se era l'ultima il gioco torna in backlog."""
+    playthrough_index = select_playthrough_index(game)
+    if playthrough_index is None:
+        return
+
+    prompt = "Eliminare la partita? (s/n): "
+    if len(game.playthroughs) == 1:
+        prompt = "È l'unica partita: il gioco tornerà in backlog e perderà il voto. Eliminare? (s/n): "
+    if not ask_confirmation(prompt):
+        print("Eliminazione annullata.")
+        return
+
+    remove_playthrough(game, playthrough_index)
+    save_library(games)
+    print("Partita eliminata.")
+
+
+def edit_title(games: list[Game], game_index: int) -> None:
+    """Modifica il titolo, rifiutando quelli già presenti in un altro gioco."""
+    new_title = ask_non_empty_text("Nuovo titolo: ")
+    if find_game_index_by_title(games, new_title, ignore_index=game_index) is not None:
+        print(f"Esiste già un gioco chiamato '{new_title}'.")
+        return
+    games[game_index].title = new_title
+    save_library(games)
+    print("Titolo aggiornato.")
+
+
+def edit_rating(games: list[Game], game: Game) -> None:
+    """Modifica il voto; Invio lo rimuove. Un gioco in backlog non si può votare."""
+    if is_backlog(game):
+        print("Aggiungi prima una partita: un gioco mai iniziato non si può votare.")
+        return
+    game.rating = ask_rating("Nuovo voto (1-10, Invio per rimuoverlo): ")
+    save_library(games)
+    print("Voto aggiornato.")
+
+
+def delete_game(games: list[Game], game_index: int) -> bool:
+    """Elimina il gioco dopo conferma e restituisce True se è stato eliminato."""
+    game = games[game_index]
+    if not ask_confirmation(f"Eliminare '{game.title}' e tutte le sue partite? (s/n): "):
+        print("Eliminazione annullata.")
+        return False
+    games.pop(game_index)
+    save_library(games)
+    print(f"'{game.title}' eliminato.")
+    return True
+
+
+def edit_playthrough(games: list[Game], game: Game) -> None:
+    """Sceglie una partita e ne modifica un campo."""
+    playthrough_index = select_playthrough_index(game)
+    if playthrough_index is None:
+        return
+    playthrough = game.playthroughs[playthrough_index]
+
+    print_playthrough_edit_menu()
+    choice = input("Scegli un'opzione: ").strip()
+    if choice == "1":
+        playthrough.platform = ask_non_empty_text("Nuova piattaforma: ")
+    elif choice == "2":
+        if not edit_playthrough_status(playthrough):
+            return
+    elif choice == "3":
+        playthrough.hours_played = ask_hours_played(allow_zero=playthrough.status != "completed")
+    elif choice == "4":
+        if not edit_playthrough_dates(playthrough):
+            return
+    else:
+        print("Opzione non valida.")
+        return
+    save_library(games)
+    print("Partita aggiornata.")
+
+
+def edit_playthrough_status(playthrough: Playthrough) -> bool:
+    """Cambia lo stato della partita e restituisce True se è stato modificato."""
+    new_status = ask_status(PLAYTHROUGH_STATUSES)
+    if new_status == playthrough.status:
+        print("Lo stato è già questo.")
+        return False
+
+    if playthrough.status == "completed":
+        if not ask_confirmation("Riaprire la partita? La data di completamento verrà rimossa. (s/n): "):
+            print("Nessuna modifica.")
+            return False
+
+    if new_status == "completed" and playthrough.hours_played == 0:
+        print("Una partita completata deve avere delle ore.")
+        playthrough.hours_played = ask_hours_played(allow_zero=False)
+
+    apply_status_change(playthrough, new_status, today_iso())
+    return True
+
+
+def edit_playthrough_dates(playthrough: Playthrough) -> bool:
+    """Modifica le date della partita (Invio lascia invariata) e restituisce True se sono valide."""
+    new_start_date = ask_date("Nuova data inizio (GG/MM/AAAA, Invio = invariata): ")
+    if new_start_date is None:
+        new_start_date = playthrough.start_date
+
+    new_completion_date = playthrough.completion_date
+    if playthrough.status == "completed":
+        answer = ask_completion_date("Nuova data completamento (GG/MM/AAAA, Invio = invariata): ", new_start_date)
+        if answer is not None:
+            new_completion_date = answer
+
+    if not is_valid_date_order(new_start_date, new_completion_date):
+        print("La data di completamento non può precedere la data di inizio. Nessuna modifica.")
+        return False
+
+    playthrough.start_date = new_start_date
+    playthrough.completion_date = new_completion_date
+    return True

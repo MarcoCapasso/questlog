@@ -3,8 +3,8 @@
 import math
 from datetime import datetime
 
-from display import print_library
-from library import ALLOWED_STATUSES, is_valid_date_order, today_iso
+from display import print_library, print_playthroughs
+from library import is_valid_date_order, today_iso
 from models import Game
 
 
@@ -14,22 +14,20 @@ def ask_non_empty_text(prompt: str) -> str:
         answer = input(prompt).strip()
         if answer != "":
             return answer
-        else:
-            print("Il campo non può essere vuoto.")
+        print("Il campo non può essere vuoto.")
 
 
-def ask_status() -> str:
+def ask_status(allowed_statuses: list[str]) -> str:
     """Mostra gli stati ammessi e chiede di sceglierne uno, normalizzato in minuscolo."""
     print()
     print("--- Seleziona uno stato ---")
-    for status in ALLOWED_STATUSES:
+    for status in allowed_statuses:
         print(f"- {status}")
     while True:
-        game_status = input("Inserisci stato del gioco: ").strip().lower()
-        if game_status in ALLOWED_STATUSES:
-            return game_status
-        else:
-            print("Inserisci uno stato valido.")
+        status = input("Inserisci lo stato: ").strip().lower()
+        if status in allowed_statuses:
+            return status
+        print("Inserisci uno stato valido.")
 
 
 def ask_hours_played(allow_zero: bool = True) -> float:
@@ -50,25 +48,23 @@ def ask_hours_played(allow_zero: bool = True) -> float:
             print("Inserisci un valore valido (es. 12.5).")
 
 
-def ask_game_index(games: list[Game]) -> int:
-    """Chiede il numero di un gioco mostrato in elenco e restituisce il suo indice nella lista."""
+def ask_list_index(count: int, label: str) -> int:
+    """Chiede il numero di un elemento mostrato in elenco e restituisce il suo indice nella lista."""
     while True:
-        number_text = input(f"Inserisci numero del gioco tra 1 e {len(games)}: ")
+        number_text = input(f"Numero {label} (1-{count}): ")
         try:
-            game_number = int(number_text)
-            if 1 <= game_number <= len(games):
-                index = game_number - 1
-                return index
-            else:
-                print(f"Numero non valido, inserisci un numero compreso tra 1 e {len(games)}.")
+            number = int(number_text)
+            if 1 <= number <= count:
+                return number - 1
+            print(f"Numero non valido, inserisci un numero compreso tra 1 e {count}.")
         except ValueError:
             print("Inserisci un numero.")
 
 
 def ask_confirmation(prompt: str) -> bool:
     """Restituisce True solo se l'utente risponde 's'."""
-    answer_confirm = input(prompt).strip().lower()
-    return answer_confirm == "s"
+    answer = input(prompt).strip().lower()
+    return answer == "s"
 
 
 def ask_rating(prompt: str) -> float | None:
@@ -80,13 +76,13 @@ def ask_rating(prompt: str) -> float | None:
         try:
             rating = float(rating_text)
             if not 1 <= rating <= 10:
-                print("Inserire un voto tra (1-10). Mezzi voti ammessi.")
+                print("Il voto deve essere tra 1 e 10.")
             elif not (rating * 2).is_integer():
                 print("Sono ammessi solo voti interi o mezzi punti (es. 7.5).")
             else:
                 return rating
         except ValueError:
-            print("Inserire un numero.")
+            print("Inserisci un numero.")
 
 
 def ask_date(prompt: str) -> str | None:
@@ -120,5 +116,15 @@ def select_game_index(games: list[Game]) -> int | None:
     print_library(games)
     if len(games) == 0:
         return None
-    else:
-        return ask_game_index(games)
+    return ask_list_index(len(games), "del gioco")
+
+
+def select_playthrough_index(game: Game) -> int | None:
+    """Restituisce l'indice della partita scelta; None se il gioco non ha partite."""
+    if len(game.playthroughs) == 0:
+        print("Il gioco non ha partite.")
+        return None
+    if len(game.playthroughs) == 1:
+        return 0
+    print_playthroughs(game)
+    return ask_list_index(len(game.playthroughs), "della partita")

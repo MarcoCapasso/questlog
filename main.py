@@ -1,50 +1,31 @@
-"""Avvio di Questlog e ciclo del menu principale."""
+"""Punto di ingresso di Questlog: carica la libreria e gestisce il menu principale."""
 
-from actions import (
-    add_game,
-    delete_game,
-    edit_game,
-    search_games,
-    show_game_details,
-)
-from display import print_library, print_menu
-from storage import load_library, save_library
+from actions import add_game, open_game, search_games, show_library
+from display import print_menu
+from storage import load_library
 
 
 def main() -> None:
-    """Carica la libreria e gestisce il menu finché l'utente non esce."""
+    """Avvia il programma e ripete il menu finché l'utente non esce."""
     games = load_library()
+
     while True:
         print_menu()
-        print()
-        choice = input("Scegli voce del menu: ")
+        choice = input("Scegli un'opzione: ").strip()
+
         if choice == "1":
             add_game(games)
-            save_library(games)
-
         elif choice == "2":
-            print_library(games)
-
+            show_library(games)
         elif choice == "3":
-            show_game_details(games)
-
+            open_game(games)
         elif choice == "4":
             search_games(games)
-
         elif choice == "5":
-            edit_game(games)
-            save_library(games)
-
-        elif choice == "6":
-            delete_game(games)
-            save_library(games)
-
-        elif choice == "7":
-            print("Torna presto!")
+            print("Alla prossima!")
             break
-
         else:
-            print("Inserisci una scelta valida.")
+            print("Opzione non valida.")
 
 
 if __name__ == "__main__":
