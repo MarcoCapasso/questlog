@@ -1,5 +1,6 @@
 """Azioni del menu: coordinano richieste, regole, stampa e salvataggio."""
 
+from csv_io import EXPORT_FILE, export_csv
 from display import (
     print_game_details,
     print_game_menu,
@@ -254,3 +255,12 @@ def edit_playthrough_dates(playthrough: Playthrough) -> bool:
     playthrough.start_date = new_start_date
     playthrough.completion_date = new_completion_date
     return True
+
+
+def export_library(games: list[Game]) -> None:
+    """Esporta la libreria in CSV, se non è vuota."""
+    if len(games) == 0:
+        print("Libreria vuota, aggiungi prima qualche gioco.")
+        return
+    export_csv(games)
+    print(f"Libreria esportata in '{EXPORT_FILE}'.")
