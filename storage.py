@@ -4,7 +4,7 @@ import json
 import os
 from dataclasses import asdict
 
-from models import Game
+from models import Game, Playthrough
 
 
 LIBRARY_FILE = "game_library.json"
@@ -20,6 +20,15 @@ def save_library(games: list[Game]) -> None:
         json.dump(games_data, file, indent=4, ensure_ascii=False)
 
 
+def game_from_dict(game_data: dict) -> Game:
+    """Ricostruisce un gioco e le sue partite dai dati letti dal JSON."""
+    playthroughs_data = game_data.pop("playthroughs", [])
+    game = Game(**game_data)
+    for playthrough_data in playthroughs_data:
+        game.playthroughs.append(Playthrough(**playthrough_data))
+    return game
+
+
 def load_library() -> list[Game]:
     """Legge la libreria dal file JSON; se manca o è danneggiato restituisce una lista vuota."""
     try:
@@ -27,7 +36,7 @@ def load_library() -> list[Game]:
             games_data = json.load(file)
         games = []
         for game_data in games_data:
-            games.append(Game(**game_data))
+            games.append(game_from_dict(game_data))
         return games
     except FileNotFoundError:
         print("Nessuna libreria trovata, ne inizia una nuova.")

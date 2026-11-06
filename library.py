@@ -2,10 +2,12 @@
 
 from datetime import date
 
-from models import Game
+from models import Game, Playthrough
 
 
-ALLOWED_STATUSES = ["backlog", "playing", "completed", "dropped"]
+PLAYTHROUGH_STATUSES = ["playing", "completed", "dropped"]
+BACKLOG = "backlog"
+SEARCH_STATUSES = [BACKLOG] + PLAYTHROUGH_STATUSES
 
 
 def find_game_indices_by_title(games: list[Game], query: str) -> list[int]:
@@ -20,30 +22,63 @@ def find_game_indices_by_title(games: list[Game], query: str) -> list[int]:
 
 
 def find_game_indices_by_status(games: list[Game], status: str) -> list[int]:
-    """Restituisce gli indici dei giochi con lo stato indicato."""
+    """Restituisce gli indici dei giochi con almeno una partita nello stato indicato; per il backlog, quelli senza partite."""
     matching_indices = []
 
     for index, game in enumerate(games):
-        if status == game.status:
+        if status == BACKLOG:
+            if is_backlog(game):
+                matching_indices.append(index)
+        elif has_playthrough_with_status(game, status):
             matching_indices.append(index)
     return matching_indices
 
 
-def is_duplicate_game(
+def find_game_index_by_title(
     games: list[Game],
     title: str,
-    platform: str,
     ignore_index: int | None = None,
-) -> bool:
-    """Indica se esiste già un gioco con stesso titolo e piattaforma, escluso ignore_index."""
+) -> int | None:
+    """Restituisce l'indice del gioco con lo stesso titolo (maiuscole ignorate), escluso ignore_index."""
     for index, game in enumerate(games):
         if index == ignore_index:
             continue
-        same_title = game.title.lower() == title.lower()
-        same_platform = game.platform.lower() == platform.lower()
-        if same_title and same_platform:
+        if game.title.lower() == title.lower():
+            return index
+    return None
+
+
+def is_backlog(game: Game) -> bool:
+    """Indica se il gioco non è mai stato iniziato, cioè non ha partite."""
+    return len(game.playthroughs) == 0
+
+
+def has_playthrough_with_status(game: Game, status: str) -> bool:
+    """Indica se almeno una partita del gioco ha lo stato indicato."""
+    for playthrough in game.playthroughs:
+        if playthrough.status == status:
             return True
     return False
+
+
+def has_completed_playthrough(game: Game) -> bool:
+    """Indica se il gioco è stato completato almeno una volta."""
+    return has_playthrough_with_status(game, "completed")
+
+
+def calculate_total_hours(game: Game) -> float:
+    """Restituisce la somma delle ore di tutte le partite del gioco."""
+    total_hours = 0.0
+    for playthrough in game.playthroughs:
+        total_hours += playthrough.hours_played
+    return total_hours
+
+
+def remove_playthrough(game: Game, playthrough_index: int) -> None:
+    """Elimina una partita; se era l'ultima, il gioco torna in backlog e perde il voto."""
+    game.playthroughs.pop(playthrough_index)
+    if is_backlog(game):
+        game.rating = None
 
 
 def today_iso() -> str:
@@ -52,22 +87,16 @@ def today_iso() -> str:
     return today.isoformat()
 
 
-def apply_status_change(game: Game, new_status: str, today: str) -> None:
-    """Cambia lo stato di un gioco e aggiorna date e voto secondo le regole."""
-    game.status = new_status
-    if new_status == "backlog":
-        game.start_date = None
-        game.completion_date = None
-        game.rating = None
-    elif new_status == "completed":
-        if game.start_date is None:
-            game.start_date = today
-        if game.completion_date is None:
-            game.completion_date = today
+def apply_status_change(playthrough: Playthrough, new_status: str, today: str) -> None:
+    """Cambia lo stato di una partita e aggiorna le sue date secondo le regole."""
+    playthrough.status = new_status
+    if playthrough.start_date is None:
+        playthrough.start_date = today
+    if new_status == "completed":
+        if playthrough.completion_date is None:
+            playthrough.completion_date = today
     else:
-        if game.start_date is None:
-            game.start_date = today
-        game.completion_date = None
+        playthrough.completion_date = None
 
 
 def is_valid_date_order(start_date: str | None, completion_date: str | None) -> bool:
