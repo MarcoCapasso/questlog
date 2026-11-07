@@ -6,6 +6,7 @@ from matplotlib.ticker import MaxNLocator
 
 PLATFORM_CHART_FILE = "chart_hours_by_platform.png"
 STATUS_CHART_FILE = "chart_playthroughs_by_status.png"
+HOURS_HISTOGRAM_FILE = "chart_hours_per_game.png"
 
 
 def save_hours_by_platform_chart(hours_by_platform: pd.Series) -> None:
@@ -32,4 +33,19 @@ def save_status_chart(status_counts: pd.Series) -> None:
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     fig.tight_layout()
     fig.savefig(STATUS_CHART_FILE)
+    plt.close(fig)
+
+
+def save_hours_histogram(hours_per_game: pd.Series, median_hours: float) -> None:
+    """Salva un istogramma delle ore totali per gioco, con la mediana evidenziata."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.hist(hours_per_game.to_numpy(), bins=10, edgecolor="white")
+    ax.axvline(median_hours, color="black", linestyle="--", label=f"Mediana: {median_hours:g} ore")
+    ax.legend()
+    ax.set_title("Distribuzione delle ore per gioco")
+    ax.set_xlabel("Ore totali")
+    ax.set_ylabel("Giochi")
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    fig.tight_layout()
+    fig.savefig(HOURS_HISTOGRAM_FILE)
     plt.close(fig)

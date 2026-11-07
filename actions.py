@@ -3,14 +3,16 @@
 from analysis import (
     games_to_dataframe,
     hours_by_platform,
-    median_hours_per_game,
+    hours_per_game,
     playthrough_rows,
     playthroughs_by_status,
 )
 from charts import (
+    HOURS_HISTOGRAM_FILE,
     PLATFORM_CHART_FILE,
     STATUS_CHART_FILE,
     save_hours_by_platform_chart,
+    save_hours_histogram,
     save_status_chart,
 )
 from csv_io import CSV_FILE, export_csv, import_csv
@@ -316,8 +318,14 @@ def show_statistics(games: list[Game]) -> None:
         return
     platform_hours = hours_by_platform(df)
     status_counts = playthroughs_by_status(df)
-    print_statistics(platform_hours, status_counts, median_hours_per_game(df))
+    game_hours = hours_per_game(df)
+    median_hours = float(game_hours.median())
+
+    print_statistics(platform_hours, status_counts, median_hours)
+
     save_hours_by_platform_chart(platform_hours)
     print(f"Grafico salvato in '{PLATFORM_CHART_FILE}'.")
     save_status_chart(status_counts)
     print(f"Grafico salvato in '{STATUS_CHART_FILE}'.")
+    save_hours_histogram(game_hours, median_hours)
+    print(f"Grafico salvato in '{HOURS_HISTOGRAM_FILE}'.")
