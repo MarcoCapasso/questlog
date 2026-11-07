@@ -222,3 +222,4 @@ __marimo__/
 game_library.json
 game_library_corrupted.json
 questlog_export.csv
+chart_*.png

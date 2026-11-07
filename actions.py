@@ -7,6 +7,7 @@ from analysis import (
     playthrough_rows,
     playthroughs_by_status,
 )
+from charts import PLATFORM_CHART_FILE, save_hours_by_platform_chart
 from csv_io import CSV_FILE, export_csv, import_csv
 from display import (
     print_game_details,
@@ -303,9 +304,12 @@ def import_library(games: list[Game]) -> None:
 
 
 def show_statistics(games: list[Game]) -> None:
-    """Calcola e mostra le statistiche delle partite giocate."""
+    """Calcola e mostra le statistiche delle partite giocate e salva il grafico delle piattaforme."""
     df = games_to_dataframe(games)
     if playthrough_rows(df).empty:
         print("Nessuna partita giocata: aggiungine una per vedere le statistiche.")
         return
-    print_statistics(hours_by_platform(df), playthroughs_by_status(df), median_hours_per_game(df))
+    platform_hours = hours_by_platform(df)
+    print_statistics(platform_hours, playthroughs_by_status(df), median_hours_per_game(df))
+    save_hours_by_platform_chart(platform_hours)
+    print(f"Grafico salvato in '{PLATFORM_CHART_FILE}'.")
