@@ -6,6 +6,7 @@ from matplotlib.ticker import MaxNLocator
 
 PLATFORM_CHART_FILE = "chart_hours_by_platform.png"
 STATUS_CHART_FILE = "chart_playthroughs_by_status.png"
+COMPLETIONS_CHART_FILE = "chart_completions_per_year.png"
 HOURS_HISTOGRAM_FILE = "chart_hours_per_game.png"
 
 
@@ -33,6 +34,21 @@ def save_status_chart(status_counts: pd.Series) -> None:
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     fig.tight_layout()
     fig.savefig(STATUS_CHART_FILE)
+    plt.close(fig)
+
+
+
+def save_completions_chart(completions: pd.Series) -> None:
+    """Salva un grafico a barre con il numero di partite completate in ogni anno."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+    bars = ax.bar(completions.index.astype(str), completions.to_numpy())
+    ax.bar_label(bars)
+    ax.set_title("Partite completate per anno")
+    ax.set_xlabel("Anno")
+    ax.set_ylabel("Partite")
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    fig.tight_layout()
+    fig.savefig(COMPLETIONS_CHART_FILE)
     plt.close(fig)
 
 

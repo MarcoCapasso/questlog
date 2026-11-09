@@ -5,6 +5,7 @@ from analysis import (
     games_to_dataframe,
     hours_by_platform,
     hours_per_game,
+    completions_per_year,
     playthrough_rows,
     playthroughs_by_status,
 )
@@ -12,6 +13,8 @@ from charts import (
     HOURS_HISTOGRAM_FILE,
     PLATFORM_CHART_FILE,
     STATUS_CHART_FILE,
+    COMPLETIONS_CHART_FILE,
+    save_completions_chart,
     save_hours_by_platform_chart,
     save_hours_histogram,
     save_status_chart,
@@ -321,6 +324,7 @@ def show_statistics(games: list[Game]) -> None:
     status_counts = playthroughs_by_status(df)
     game_hours = hours_per_game(df)
     playthrough_days = days_to_complete(df)
+    year_completions = completions_per_year(df)
     median_hours = float(game_hours.median())
     median_days = float(playthrough_days.median())
 
@@ -328,7 +332,15 @@ def show_statistics(games: list[Game]) -> None:
 
     save_hours_by_platform_chart(platform_hours)
     print(f"Grafico salvato in '{PLATFORM_CHART_FILE}'.")
+
     save_status_chart(status_counts)
     print(f"Grafico salvato in '{STATUS_CHART_FILE}'.")
+
     save_hours_histogram(game_hours, median_hours)
     print(f"Grafico salvato in '{HOURS_HISTOGRAM_FILE}'.")
+
+    if year_completions.empty:
+        print("Nessuna partita completata: grafico per anno non creato.")
+    else:
+        save_completions_chart(year_completions)
+        print(f"Grafico salvato in '{COMPLETIONS_CHART_FILE}'.")

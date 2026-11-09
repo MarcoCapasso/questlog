@@ -45,3 +45,9 @@ def days_to_complete(df: pd.DataFrame) -> pd.Series:
     completed = df[df["status"] == "completed"]
     completed = completed.dropna(subset=["start_date", "completion_date"])
     return (completed["completion_date"] - completed["start_date"]).dt.days
+
+
+def completions_per_year(df: pd.DataFrame) -> pd.Series:
+    """Restituisce il numero di partite completate in ogni anno, in ordine cronologico."""
+    completed = df[df["status"] == "completed"].dropna(subset=["completion_date"])
+    return completed["completion_date"].dt.year.value_counts().sort_index()
