@@ -1,6 +1,7 @@
 """Statistiche sulla libreria calcolate con pandas."""
 
 import math
+
 import pandas as pd
 
 from csv_io import CSV_FIELDS, games_to_rows
@@ -61,3 +62,9 @@ def completion_rate(df: pd.DataFrame) -> float:
     if concluded.empty:
         return math.nan
     return float((concluded == "completed").mean())
+
+
+def average_rating(df: pd.DataFrame) -> float:
+    """Restituisce la media dei voti dei giochi votati; NaN se nessun gioco ha un voto."""
+    ratings = df.drop_duplicates(subset="title")["rating"]
+    return float(ratings.mean())

@@ -1,8 +1,8 @@
 """Stampa di menu, libreria e risultati nel terminale."""
 
+import math
 from datetime import date
 
-import math
 import pandas as pd
 
 from library import calculate_total_hours, has_completed_playthrough, is_backlog
@@ -96,13 +96,21 @@ def print_playthroughs(game: Game) -> None:
         print(f"{position}. {format_playthrough_line(playthrough)}")
 
 
-def print_statistics(hours_by_platform: pd.Series, status_counts: pd.Series, median_hours: float, median_days: float, completion_rate: float) -> None:
+def print_statistics(
+    hours_by_platform: pd.Series,
+    status_counts: pd.Series,
+    median_hours: float,
+    median_days: float,
+    completion_rate: float,
+    average_rating: float,
+) -> None:
     """Mostra le statistiche della libreria."""
     print()
     print("--- Statistiche ---")
-    print(f"{'Mediana ore per gioco:':<28}{format_median(median_hours)}")
-    print(f"{'Mediana giorni per finire:':<28}{format_median(median_days)}")
+    print(f"{'Mediana ore per gioco:':<28}{format_number(median_hours)}")
+    print(f"{'Mediana giorni per finire:':<28}{format_number(median_days)}")
     print(f"{'Tasso di completamento:':<28}{format_percentage(completion_rate)}")
+    print(f"{'Voto medio:':<28}{format_number(average_rating)}")
     print()
     print("Ore per piattaforma")
     for platform, hours in hours_by_platform.items():
@@ -156,8 +164,8 @@ def format_date(iso_date: str | None) -> str:
     return date.fromisoformat(iso_date).strftime("%d/%m/%Y")
 
 
-def format_median(value: float) -> str:
-    """Restituisce la mediana formattata, oppure un trattino se non è calcolabile."""
+def format_number(value: float) -> str:
+    """Restituisce il numero senza decimali superflui, oppure un trattino se non è calcolabile."""
     if math.isnan(value):
         return "-"
     return f"{value:g}"
