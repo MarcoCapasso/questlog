@@ -96,12 +96,13 @@ def print_playthroughs(game: Game) -> None:
         print(f"{position}. {format_playthrough_line(playthrough)}")
 
 
-def print_statistics(hours_by_platform: pd.Series, status_counts: pd.Series, median_hours: float, median_days: float) -> None:
+def print_statistics(hours_by_platform: pd.Series, status_counts: pd.Series, median_hours: float, median_days: float, completion_rate: float) -> None:
     """Mostra le statistiche della libreria."""
     print()
     print("--- Statistiche ---")
     print(f"{'Mediana ore per gioco:':<28}{format_median(median_hours)}")
     print(f"{'Mediana giorni per finire:':<28}{format_median(median_days)}")
+    print(f"{'Tasso di completamento:':<28}{format_percentage(completion_rate)}")
     print()
     print("Ore per piattaforma")
     for platform, hours in hours_by_platform.items():
@@ -160,3 +161,10 @@ def format_median(value: float) -> str:
     if math.isnan(value):
         return "-"
     return f"{value:g}"
+
+
+def format_percentage(value: float) -> str:
+    """Restituisce il valore come percentuale intera, oppure un trattino se non è calcolabile."""
+    if math.isnan(value):
+        return "-"
+    return f"{value:.0%}"

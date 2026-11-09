@@ -1,5 +1,6 @@
 """Statistiche sulla libreria calcolate con pandas."""
 
+import math
 import pandas as pd
 
 from csv_io import CSV_FIELDS, games_to_rows
@@ -51,3 +52,12 @@ def completions_per_year(df: pd.DataFrame) -> pd.Series:
     """Restituisce il numero di partite completate in ogni anno, in ordine cronologico."""
     completed = df[df["status"] == "completed"].dropna(subset=["completion_date"])
     return completed["completion_date"].dt.year.value_counts().sort_index()
+
+
+def completion_rate(df: pd.DataFrame) -> float:
+    """Restituisce la quota di partite concluse che sono state completate; NaN se nessuna è conclusa."""
+    statuses = playthrough_rows(df)["status"]
+    concluded = statuses[statuses.isin(["completed", "dropped"])]
+    if concluded.empty:
+        return math.nan
+    return float((concluded == "completed").mean())

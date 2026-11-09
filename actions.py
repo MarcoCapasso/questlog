@@ -6,6 +6,7 @@ from analysis import (
     hours_by_platform,
     hours_per_game,
     completions_per_year,
+    completion_rate,
     playthrough_rows,
     playthroughs_by_status,
 )
@@ -325,10 +326,11 @@ def show_statistics(games: list[Game]) -> None:
     game_hours = hours_per_game(df)
     playthrough_days = days_to_complete(df)
     year_completions = completions_per_year(df)
+    completion_stats = completion_rate(df)
     median_hours = float(game_hours.median())
     median_days = float(playthrough_days.median())
 
-    print_statistics(platform_hours, status_counts, median_hours, median_days)
+    print_statistics(platform_hours, status_counts, median_hours, median_days, completion_stats)
 
     save_hours_by_platform_chart(platform_hours)
     print(f"Grafico salvato in '{PLATFORM_CHART_FILE}'.")
