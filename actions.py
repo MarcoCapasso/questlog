@@ -1,6 +1,7 @@
 """Azioni del menu: coordinano richieste, regole, stampa e salvataggio."""
 
 from analysis import (
+    days_to_complete,
     games_to_dataframe,
     hours_by_platform,
     hours_per_game,
@@ -319,9 +320,11 @@ def show_statistics(games: list[Game]) -> None:
     platform_hours = hours_by_platform(df)
     status_counts = playthroughs_by_status(df)
     game_hours = hours_per_game(df)
+    playthrough_days = days_to_complete(df)
     median_hours = float(game_hours.median())
+    median_days = float(playthrough_days.median())
 
-    print_statistics(platform_hours, status_counts, median_hours)
+    print_statistics(platform_hours, status_counts, median_hours, median_days)
 
     save_hours_by_platform_chart(platform_hours)
     print(f"Grafico salvato in '{PLATFORM_CHART_FILE}'.")
