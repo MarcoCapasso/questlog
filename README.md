@@ -2,7 +2,7 @@
 
 Applicazione da terminale per catalogare la propria libreria di videogiochi e tenere traccia di voti e partite: ogni partita ha piattaforma, stato, ore di gioco e date.
 
-> Progetto in sviluppo. Questa è la versione a riga di comando: le prossime fasi aggiungeranno statistiche, grafici e un'interfaccia desktop.
+> Progetto in sviluppo. Questa è la versione a riga di comando, con statistiche e grafici: la prossima fase aggiungerà un'interfaccia desktop.
 
 ## Funzionalità
 
@@ -13,6 +13,7 @@ Applicazione da terminale per catalogare la propria libreria di videogiochi e te
 - **Ricerca** per titolo, parziale e senza distinzione tra maiuscole e minuscole.
 - **Filtro** per stato: trova i giochi con almeno una partita in quello stato, oppure i giochi in backlog.
 - **Esportazione e importazione CSV**, per aprire la libreria in Excel o ripristinarla da un backup.
+- **Statistiche e grafici**: ore per piattaforma, partite per stato, durata tipica di un gioco, tasso di completamento, voto medio e grafici salvati come immagini.
 - **Eliminazione** di giochi e partite con richiesta di conferma.
 - **Date automatiche** nei cambi di stato.
 - **Salvataggio automatico** dopo ogni modifica e caricamento all'avvio.
@@ -21,23 +22,24 @@ Applicazione da terminale per catalogare la propria libreria di videogiochi e te
 ## Requisiti e avvio
 
 - Python 3.10 o superiore
-- Nessuna libreria esterna per usare l'applicazione
+- Le librerie elencate in `requirements.txt`: pandas e matplotlib per le statistiche, pytest e mypy per lo sviluppo
 
 ```bash
 python main.py
 ```
 
-La libreria viene salvata nel file `game_library.json`, nella cartella del progetto. Il file è escluso dal repository perché contiene dati personali, come l'export `questlog_export.csv`.
+La libreria viene salvata nel file `game_library.json`, nella cartella del progetto. Il file è escluso dal repository perché contiene dati personali, come l'export `questlog_export.csv` e i grafici `chart_*.png`.
 
 ### Sviluppo
 
-Per eseguire i test serve un ambiente virtuale con le dipendenze di sviluppo:
+L'applicazione e i test si eseguono in un ambiente virtuale con le dipendenze del progetto:
 
 ```bash
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 pytest
+python -m mypy main.py tests
 ```
 
 ## Regole della libreria
@@ -50,6 +52,7 @@ Un gioco ha un titolo, un voto e zero o più partite. Piattaforma, stato, ore e 
 - Eliminando l'ultima partita, il gioco torna in backlog e perde il voto, dopo conferma.
 - Le ore totali del gioco sono la somma delle ore di tutte le partite.
 - Lo stesso gioco può avere più partite, anche sulla stessa piattaforma.
+- Inserendo una nuova partita, una piattaforma già presente scritta con maiuscole diverse (`ps4` / `PS4`) viene ricondotta alla grafia esistente; modificando una partita vale invece la grafia inserita, così da poterla correggere.
 
 ### Stati di una partita
 
@@ -133,11 +136,36 @@ Celeste;;;;;;
 
 Il CSV esportato usa il punto per i decimali: l'Excel italiano può mostrare le ore come testo anziché come numero.
 
+## Statistiche
+
+La voce **Mostra statistiche** riassume le abitudini di gioco e salva quattro grafici nella cartella del progetto.
+
+| Statistica | Come si calcola |
+|---|---|
+| Ore per piattaforma | somma delle ore di tutte le partite su quella piattaforma |
+| Partite per stato | numero di partite `playing`, `completed` e `dropped` |
+| Mediana ore per gioco | mediana delle ore totali di ogni gioco giocato |
+| Mediana giorni per finire | mediana dei giorni tra inizio e completamento delle partite completate con entrambe le date |
+| Tasso di completamento | partite `completed` sul totale delle partite concluse (`completed` + `dropped`); le partite in corso non contano |
+| Voto medio | media dei voti dei giochi votati, contando ogni gioco una volta sola |
+
+| Grafico | File |
+|---|---|
+| Ore per piattaforma | `chart_hours_by_platform.png` |
+| Partite per stato | `chart_playthroughs_by_status.png` |
+| Distribuzione delle ore per gioco, con la mediana | `chart_hours_per_game.png` |
+| Partite completate per anno | `chart_completions_per_year.png` |
+
+- Le durate usano la **mediana** e non la media, perché un singolo gioco con moltissime ore sposterebbe la media lontano dal gioco tipico.
+- I giochi in backlog sono esclusi da tutte le statistiche sulle partite.
+- Quando un valore non è calcolabile (per esempio nessuna partita completata) viene mostrato un trattino, non zero.
+- Il grafico per anno non viene creato se non ci sono partite completate.
+
 ## Roadmap
 
 - [x] **CLI**: gestione completa della libreria con persistenza JSON
 - [x] **Python intermedio**: classi, type hints, test automatici con pytest, voto e date, più partite per gioco, importazione ed esportazione CSV
-- [ ] **Analisi dei dati**: statistiche con pandas e grafici con matplotlib
+- [x] **Analisi dei dati**: statistiche con pandas e grafici con matplotlib
 - [ ] **Applicazione desktop**: interfaccia grafica e integrazione con il catalogo IGDB
 - [ ] **Pubblicazione**: eseguibile scaricabile
 
