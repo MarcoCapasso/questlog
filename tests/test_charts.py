@@ -1,6 +1,6 @@
 import pandas as pd
 
-from charts import (
+from core.charts import (
     COMPLETIONS_CHART_FILE,
     HOURS_HISTOGRAM_FILE,
     PLATFORM_CHART_FILE,

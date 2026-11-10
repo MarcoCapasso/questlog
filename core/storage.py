@@ -3,12 +3,13 @@
 import json
 import os
 from dataclasses import asdict
+from pathlib import Path
 
-from models import Game, Playthrough
+from core.models import Game, Playthrough
 
-
-LIBRARY_FILE = "game_library.json"
-CORRUPTED_LIBRARY_FILE = "game_library_corrupted.json"
+DATA_DIR = Path("data")
+LIBRARY_FILE = DATA_DIR / "game_library.json"
+CORRUPTED_LIBRARY_FILE = DATA_DIR / "game_library_corrupted.json"
 
 
 def save_library(games: list[Game]) -> None:
@@ -16,6 +17,7 @@ def save_library(games: list[Game]) -> None:
     games_data = []
     for game in games:
         games_data.append(asdict(game))
+    DATA_DIR.mkdir(exist_ok=True)
     with open(LIBRARY_FILE, "w", encoding="utf-8") as file:
         json.dump(games_data, file, indent=4, ensure_ascii=False)
 

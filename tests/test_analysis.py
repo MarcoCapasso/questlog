@@ -3,7 +3,7 @@ import math
 import pandas as pd
 import pytest
 
-from analysis import (
+from core.analysis import (
     average_rating,
     completion_rate,
     completions_per_year,
@@ -13,7 +13,7 @@ from analysis import (
     hours_per_game,
     playthroughs_by_status,
 )
-from models import Game, Playthrough
+from core.models import Game, Playthrough
 
 
 def make_playthrough(

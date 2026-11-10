@@ -4,8 +4,8 @@ import math
 
 import pandas as pd
 
-from csv_io import CSV_FIELDS, games_to_rows
-from models import Game
+from core.csv_io import CSV_FIELDS, games_to_rows
+from core.models import Game
 
 
 def games_to_dataframe(games: list[Game]) -> pd.DataFrame:

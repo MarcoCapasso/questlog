@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from models import Game, Playthrough
+from core.models import Game, Playthrough
 
 
 PLAYTHROUGH_STATUSES = ["playing", "completed", "dropped"]

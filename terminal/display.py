@@ -5,8 +5,8 @@ from datetime import date
 
 import pandas as pd
 
-from library import calculate_total_hours, has_completed_playthrough, is_backlog
-from models import Game, Playthrough
+from core.library import calculate_total_hours, has_completed_playthrough, is_backlog
+from core.models import Game, Playthrough
 
 
 def print_menu() -> None:

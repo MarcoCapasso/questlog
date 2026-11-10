@@ -1,4 +1,4 @@
-from library import (
+from core.library import (
     BACKLOG,
     apply_status_change,
     calculate_total_hours,
@@ -11,7 +11,7 @@ from library import (
     is_valid_date_order,
     remove_playthrough,
 )
-from models import Game, Playthrough
+from core.models import Game, Playthrough
 
 
 TODAY = "2026-03-20"

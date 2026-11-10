@@ -1,8 +1,16 @@
 """Punto di ingresso di Questlog: carica la libreria e gestisce il menu principale."""
 
-from actions import add_game, export_library, import_library, open_game, search_games, show_library, show_statistics
-from display import print_menu
-from storage import load_library
+from core.storage import load_library
+from terminal.actions import (
+    add_game,
+    export_library,
+    import_library,
+    open_game,
+    search_games,
+    show_library,
+    show_statistics,
+)
+from terminal.display import print_menu
 
 
 def main() -> None:

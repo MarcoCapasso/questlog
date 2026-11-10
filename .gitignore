@@ -219,7 +219,4 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-game_library.json
-game_library_corrupted.json
-questlog_export.csv
-chart_*.png
+data/

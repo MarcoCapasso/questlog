@@ -1,7 +1,7 @@
 import pytest
 
-from csv_io import export_csv, games_to_rows, import_csv, rows_to_games
-from models import Game, Playthrough
+from core.csv_io import export_csv, games_to_rows, import_csv, rows_to_games
+from core.models import Game, Playthrough
 
 
 TODAY = "2026-03-20"

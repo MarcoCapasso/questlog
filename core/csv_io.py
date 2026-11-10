@@ -4,15 +4,17 @@ import csv
 import math
 from datetime import date, datetime
 
-from library import PLAYTHROUGH_STATUSES, find_game_index_by_title, is_valid_date_order, is_valid_rating
-from models import Game, Playthrough
+from core.library import PLAYTHROUGH_STATUSES, find_game_index_by_title, is_valid_date_order, is_valid_rating
+from core.models import Game, Playthrough
+from core.storage import DATA_DIR
 
 CSV_FIELDS = ["title", "rating", "platform", "status", "hours_played", "start_date", "completion_date"]
-CSV_FILE = "questlog_export.csv"
+CSV_FILE = DATA_DIR / "questlog_export.csv"
 
 
 def export_csv(games: list[Game]) -> None:
     """Scrive la libreria nel file CSV, una riga per partita."""
+    DATA_DIR.mkdir(exist_ok=True)
     with open(CSV_FILE, "w", newline="", encoding="utf-8-sig") as file:
         writer = csv.DictWriter(file, fieldnames=CSV_FIELDS, delimiter=";")
         writer.writeheader()

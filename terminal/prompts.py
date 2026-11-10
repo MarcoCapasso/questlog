@@ -3,9 +3,9 @@
 import math
 from datetime import datetime
 
-from display import print_library, print_playthroughs
-from library import is_valid_date_order, is_valid_rating, today_iso
-from models import Game
+from core.library import is_valid_date_order, is_valid_rating, today_iso
+from core.models import Game
+from terminal.display import print_library, print_playthroughs
 
 
 def ask_non_empty_text(prompt: str) -> str:
