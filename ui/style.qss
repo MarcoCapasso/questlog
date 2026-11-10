@@ -1,0 +1,41 @@
+QMainWindow {
+    background-color: #101214;
+}
+
+QWidget {
+    color: #F1F3F5;
+    font-family: "Segoe UI";
+    font-size: 14px;
+}
+
+QFrame#header {
+    border: none;
+    border-bottom: 1px solid #2A2F35;
+}
+
+QLabel#logo {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding-right: 24px;
+}
+
+QPushButton#navButton {
+    background-color: transparent;
+    color: #C2C8CF;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    padding: 8px 18px;
+    font-weight: 600;
+}
+
+QPushButton#navButton:hover {
+    background-color: #1C2024;
+    color: #FFFFFF;
+}
+
+QPushButton#navButton:checked {
+    background-color: #F1F3F5;
+    color: #101214;
+    font-weight: 700;
+}
