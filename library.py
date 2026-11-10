@@ -109,3 +109,12 @@ def is_valid_date_order(start_date: str | None, completion_date: str | None) -> 
     if start_date is None or completion_date is None:
         return True
     return completion_date >= start_date
+
+
+def find_platform_spelling(games: list[Game], platform: str) -> str:
+    """Restituisce la grafia già usata in libreria per la piattaforma (maiuscole ignorate), altrimenti quella inserita."""
+    for game in games:
+        for playthrough in game.playthroughs:
+            if playthrough.platform.lower() == platform.lower():
+                return playthrough.platform
+    return platform

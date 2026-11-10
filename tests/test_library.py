@@ -5,6 +5,7 @@ from library import (
     find_game_index_by_title,
     find_game_indices_by_status,
     find_game_indices_by_title,
+    find_platform_spelling,
     has_completed_playthrough,
     is_backlog,
     is_valid_date_order,
@@ -149,3 +150,15 @@ def test_date_order_accepts_same_day():
 
 def test_date_order_rejects_completion_before_start():
     assert not is_valid_date_order("2026-02-01", "2026-01-01")
+
+
+def test_platform_spelling_reuses_existing_one():
+    games = [Game("Hades", 9, [Playthrough("PS4", "completed", 40)])]
+
+    assert find_platform_spelling(games, "ps4") == "PS4"
+
+
+def test_platform_spelling_keeps_new_platform_as_typed():
+    games = [Game("Hades", 9, [Playthrough("PS4", "completed", 40)])]
+
+    assert find_platform_spelling(games, "Switch") == "Switch"

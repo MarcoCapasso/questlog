@@ -38,6 +38,7 @@ from library import (
     find_game_index_by_title,
     find_game_indices_by_status,
     find_game_indices_by_title,
+    find_platform_spelling,
     is_backlog,
     is_valid_date_order,
     remove_playthrough,
@@ -58,9 +59,9 @@ from prompts import (
 from storage import save_library
 
 
-def ask_new_playthrough() -> Playthrough:
-    """Chiede i dati di una nuova partita; le date lasciate vuote diventano oggi dove servono."""
-    platform = ask_non_empty_text("Piattaforma: ")
+def ask_new_playthrough(games: list[Game]) -> Playthrough:
+    """Chiede i dati di una nuova partita, riusando la grafia delle piattaforme già in libreria."""
+    platform = find_platform_spelling(games, ask_non_empty_text("Piattaforma: "))
     status = ask_status(PLAYTHROUGH_STATUSES)
     hours_played = ask_hours_played(allow_zero=status != "completed")
     start_date = ask_date("Data inizio (GG/MM/AAAA, Invio = oggi): ")
@@ -81,7 +82,7 @@ def add_game(games: list[Game]) -> None:
     if existing_index is not None:
         existing_game = games[existing_index]
         if ask_confirmation(f"'{existing_game.title}' è già in libreria. Aggiungere una nuova partita? (s/n): "):
-            existing_game.playthroughs.append(ask_new_playthrough())
+            existing_game.playthroughs.append(ask_new_playthrough(games))
             save_library(games)
             print("Partita aggiunta.")
         else:
@@ -90,7 +91,7 @@ def add_game(games: list[Game]) -> None:
 
     game = Game(title)
     if ask_confirmation("Hai già iniziato a giocarci? (s/n): "):
-        game.playthroughs.append(ask_new_playthrough())
+        game.playthroughs.append(ask_new_playthrough(games))
         game.rating = ask_rating("Voto (1-10, Invio per saltare): ")
     games.append(game)
     save_library(games)
@@ -154,7 +155,7 @@ def open_game(games: list[Game]) -> None:
 def add_playthrough(games: list[Game], game: Game) -> None:
     """Aggiunge una partita al gioco; se era in backlog propone anche il voto."""
     was_backlog = is_backlog(game)
-    game.playthroughs.append(ask_new_playthrough())
+    game.playthroughs.append(ask_new_playthrough(games))
     if was_backlog:
         game.rating = ask_rating("Voto (1-10, Invio per saltare): ")
     save_library(games)
