@@ -11,8 +11,10 @@ from core.library import (
     has_completed_playthrough,
     is_backlog,
     is_valid_date_order,
+    playthrough_statuses,
     remove_playthrough,
     summary_status,
+    validate_new_title,
 )
 from core.models import Game, Playthrough
 
@@ -197,3 +199,32 @@ def test_count_by_summary_status_includes_empty_statuses():
     games = [make_game("Hades", make_playthrough("completed")), make_game("Celeste")]
 
     assert count_by_summary_status(games) == {"playing": 0, "completed": 1, "dropped": 0, BACKLOG: 1}
+
+
+def test_playthrough_statuses_lists_each_status_once_in_priority_order():
+    game = make_game(
+        "Hades",
+        make_playthrough("dropped"),
+        make_playthrough("completed"),
+        make_playthrough("completed"),
+    )
+
+    assert playthrough_statuses(game) == ["completed", "dropped"]
+
+
+def test_playthrough_statuses_is_empty_for_backlog_game():
+    assert playthrough_statuses(make_game("Hades")) == []
+
+
+def test_validate_new_title_rejects_empty_title():
+    assert validate_new_title([], "   ") == "Il titolo non può essere vuoto."
+
+
+def test_validate_new_title_rejects_existing_title_ignoring_case():
+    games = [make_game("Hades")]
+
+    assert validate_new_title(games, "hades") == "'hades' è già nella libreria."
+
+
+def test_validate_new_title_accepts_new_title():
+    assert validate_new_title([make_game("Hades")], "Celeste") is None

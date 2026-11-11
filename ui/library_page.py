@@ -3,6 +3,7 @@
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QAction, QActionGroup, QResizeEvent
 from PySide6.QtWidgets import (
+    QDialog,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
 from core.library import count_by_summary_status, filter_games
 from core.models import Game
 from core.repository import GameRepository
+from ui.add_game_dialog import AddGameDialog
 from ui.game_card import CARD_WIDTH, GameCard
 
 CARD_SPACING = 20
@@ -64,6 +66,10 @@ class LibraryPage(QWidget):
         self.filters_button.setObjectName("filtersButton")
         self.filters_button.clicked.connect(self.show_filters_menu)
 
+        add_button = QPushButton("Aggiungi gioco")
+        add_button.setObjectName("primaryButton")
+        add_button.clicked.connect(self.add_game)
+
         self.heading = QLabel()
         self.heading.setObjectName("pageTitle")
 
@@ -84,6 +90,7 @@ class LibraryPage(QWidget):
         toolbar.addStretch()
         toolbar.addWidget(self.search_box)
         toolbar.addWidget(self.filters_button)
+        toolbar.addWidget(add_button)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(PAGE_MARGIN, 28, PAGE_MARGIN, 0)
@@ -115,6 +122,14 @@ class LibraryPage(QWidget):
             card.deleteLater()
         self.cards = [GameCard(game) for game in visible_games]
         self.arrange_cards()
+
+    def add_game(self) -> None:
+        """Apre il form di aggiunta e, se l'utente salva, aggiunge il gioco alla libreria."""
+        dialog = AddGameDialog(self.games, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.repository.save_games(self.games + [dialog.created_game()])
+            self.refresh()
+
 
     def show_filters_menu(self) -> None:
         """Apre il menu dei filtri sotto il bottone, allineato al suo bordo destro."""

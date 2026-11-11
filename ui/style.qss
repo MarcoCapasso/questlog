@@ -189,3 +189,38 @@ QMenu::item:selected {
 QMenu::item:checked {
     font-weight: 700;
 }
+
+/* Bottoni e finestre di dialogo */
+
+QPushButton {
+    background-color: #1C2024;
+    color: #F1F3F5;
+    border: 1px solid #2A2F35;
+    border-radius: 16px;
+    padding: 8px 18px;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    background-color: #252A30;
+}
+
+QPushButton#primaryButton,
+QDialogButtonBox QPushButton:default {
+    background-color: #F1F3F5;
+    color: #101214;
+    border: 1px solid #F1F3F5;
+}
+
+QPushButton#primaryButton:hover,
+QDialogButtonBox QPushButton:default:hover {
+    background-color: #FFFFFF;
+}
+
+QDialog {
+    background-color: #15181B;
+}
+
+QLabel#formError {
+    color: #FF9B9B;
+}

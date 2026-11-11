@@ -149,3 +149,22 @@ def count_by_summary_status(games: list[Game]) -> dict[str, int]:
     for game in games:
         counts[summary_status(game)] += 1
     return counts
+
+
+def playthrough_statuses(game: Game) -> list[str]:
+    """Restituisce gli stati diversi delle partite del gioco, nell'ordine di priorità di PLAYTHROUGH_STATUSES."""
+    statuses = []
+    for status in PLAYTHROUGH_STATUSES:
+        if has_playthrough_with_status(game, status):
+            statuses.append(status)
+    return statuses
+
+
+def validate_new_title(games: list[Game], title: str) -> str | None:
+    """Restituisce il messaggio d'errore per il titolo di un nuovo gioco, oppure None se è valido."""
+    clean_title = title.strip()
+    if clean_title == "":
+        return "Il titolo non può essere vuoto."
+    if find_game_index_by_title(games, clean_title) is not None:
+        return f"'{clean_title}' è già nella libreria."
+    return None
