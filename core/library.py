@@ -128,3 +128,24 @@ def summary_status(game: Game) -> str:
         if has_playthrough_with_status(game, status):
             return status
     return BACKLOG
+
+
+def filter_games(games: list[Game], query: str = "", status: str | None = None) -> list[Game]:
+    """Restituisce i giochi il cui titolo contiene il testo cercato e, se indicato, con quello stato riassuntivo."""
+    normalized_query = query.strip().lower()
+    matching_games = []
+    for game in games:
+        if normalized_query not in game.title.lower():
+            continue
+        if status is not None and summary_status(game) != status:
+            continue
+        matching_games.append(game)
+    return matching_games
+
+
+def count_by_summary_status(games: list[Game]) -> dict[str, int]:
+    """Restituisce quanti giochi ci sono per ogni stato riassuntivo, compresi quelli a zero."""
+    counts = {status: 0 for status in PLAYTHROUGH_STATUSES + [BACKLOG]}
+    for game in games:
+        counts[summary_status(game)] += 1
+    return counts

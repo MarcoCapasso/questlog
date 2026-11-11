@@ -108,3 +108,37 @@ QScrollBar::add-line:vertical,
 QScrollBar::sub-line:vertical {
     height: 0px;
 }
+
+QLineEdit {
+    background-color: #1C2024;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    padding: 8px 14px;
+    color: #F1F3F5;
+    selection-background-color: #8FE0A8;
+    selection-color: #0E2415;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4A5058;
+}
+
+QPushButton#filterButton {
+    background-color: transparent;
+    color: #F1F3F5;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 500;
+}
+
+QPushButton#filterButton:hover {
+    background-color: #1C2024;
+}
+
+QPushButton#filterButton:checked {
+    background-color: #252A30;
+    font-weight: 700;
+}
+

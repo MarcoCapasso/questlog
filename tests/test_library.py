@@ -2,6 +2,8 @@ from core.library import (
     BACKLOG,
     apply_status_change,
     calculate_total_hours,
+    count_by_summary_status,
+    filter_games,
     find_game_index_by_title,
     find_game_indices_by_status,
     find_game_indices_by_title,
@@ -173,3 +175,25 @@ def test_summary_status_prefers_playing_over_completed():
 
 def test_summary_status_of_game_without_playthroughs_is_backlog():
     assert summary_status(make_game("Hades")) == BACKLOG
+
+
+def test_filter_games_by_title_ignores_case_and_spaces():
+    games = [make_game("Hades"), make_game("Celeste")]
+
+    assert filter_games(games, "  HAD ") == [games[0]]
+
+
+def test_filter_games_combines_title_and_status():
+    games = [
+        make_game("Zelda: Ocarina", make_playthrough("playing")),
+        make_game("Zelda: Breath", make_playthrough("completed")),
+        make_game("Hades", make_playthrough("playing")),
+    ]
+
+    assert filter_games(games, "zelda", "playing") == [games[0]]
+
+
+def test_count_by_summary_status_includes_empty_statuses():
+    games = [make_game("Hades", make_playthrough("completed")), make_game("Celeste")]
+
+    assert count_by_summary_status(games) == {"playing": 0, "completed": 1, "dropped": 0, BACKLOG: 1}
