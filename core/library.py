@@ -1,11 +1,13 @@
 """Regole e ricerche sulla libreria, senza interazione con l'utente."""
 
+import math
 from datetime import date
 
 from core.models import Game, Playthrough
 
 
 PLAYTHROUGH_STATUSES = ["playing", "completed", "dropped"]
+MAX_RATING = 5
 BACKLOG = "backlog"
 SEARCH_STATUSES = [BACKLOG] + PLAYTHROUGH_STATUSES
 
@@ -100,8 +102,13 @@ def apply_status_change(playthrough: Playthrough, new_status: str, today: str) -
 
 
 def is_valid_rating(rating: float) -> bool:
-    """Indica se il voto è un numero intero da 1 a 10."""
-    return 1 <= rating <= 10 and float(rating).is_integer()
+    """Indica se il voto è un numero intero di stelle, da 1 a MAX_RATING (5)."""
+    return 1 <= rating <= MAX_RATING and float(rating).is_integer()
+
+
+def convert_rating_to_five_stars(rating: float) -> int:
+    """Converte un vecchio voto da 1 a 10 in stelle da 1 a 5, arrotondando per eccesso (9 → 5, 7 → 4)."""
+    return math.ceil(rating / 2)
 
 
 def is_valid_date_order(start_date: str | None, completion_date: str | None) -> bool:

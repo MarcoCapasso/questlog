@@ -17,6 +17,8 @@ class CatalogGame:
     platforms: list[str] = field(default_factory=list)
     genres: list[str] = field(default_factory=list)
     summary: str = ""
+    screenshot_urls: list[str] = field(default_factory=list)
+    backdrop_url: str | None = None
 
 
 class GameCatalog(Protocol):

@@ -15,7 +15,7 @@ def make_row(**cells: str) -> dict:
 
 
 def test_games_to_rows_writes_one_row_per_playthrough():
-    game = Game("Hades", 9, [Playthrough("PC", "completed", 40), Playthrough("Switch", "playing", 5)])
+    game = Game("Hades", 4, [Playthrough("PC", "completed", 40), Playthrough("Switch", "playing", 5)])
 
     rows = games_to_rows([game])
 
@@ -62,7 +62,7 @@ def test_import_error_reports_line_number():
 
 
 def test_import_rejects_different_ratings_for_same_game():
-    rows = [make_row(rating="8"), make_row(rating="9", platform="Switch")]
+    rows = [make_row(rating="3"), make_row(rating="4", platform="Switch")]
 
     with pytest.raises(ValueError, match="voti diversi"):
         rows_to_games(rows, TODAY)
@@ -70,7 +70,7 @@ def test_import_rejects_different_ratings_for_same_game():
 
 def test_import_rejects_rating_on_backlog_game():
     with pytest.raises(ValueError, match="non può avere un voto"):
-        rows_to_games([make_row(rating="8", platform="")], TODAY)
+        rows_to_games([make_row(rating="4", platform="")], TODAY)
 
 
 def test_import_rejects_future_date():
@@ -81,7 +81,7 @@ def test_import_rejects_future_date():
 def test_export_then_import_returns_same_library(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     games = [
-        Game("Zelda: Ocarina of Time; Master Quest", 9,
+        Game("Zelda: Ocarina of Time; Master Quest", 5,
              [Playthrough("Switch", "completed", 30, "2026-01-01", "2026-02-01")]),
         Game("Celeste"),
     ]

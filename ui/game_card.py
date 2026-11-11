@@ -115,7 +115,7 @@ def format_card_details(game: Game) -> str:
         return "mai iniziato"
     details = f"{calculate_total_hours(game):g} ore"
     if game.rating is not None:
-        details += f" · voto {game.rating:g}"
+        details += f" · ★ {game.rating:g}"
     return details
 
 

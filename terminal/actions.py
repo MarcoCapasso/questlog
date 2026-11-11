@@ -23,6 +23,7 @@ from core.charts import (
 )
 from core.csv_io import CSV_FILE, export_csv, import_csv
 from core.library import (
+    MAX_RATING,
     PLAYTHROUGH_STATUSES,
     SEARCH_STATUSES,
     apply_status_change,
@@ -92,7 +93,7 @@ def add_game(games: list[Game]) -> None:
     game = Game(title)
     if ask_confirmation("Hai già iniziato a giocarci? (s/n): "):
         game.playthroughs.append(ask_new_playthrough(games))
-        game.rating = ask_rating("Voto (1-10, Invio per saltare): ")
+        game.rating = ask_rating(f"Voto (1-{MAX_RATING}, Invio per saltare): ")
     games.append(game)
     save_library(games)
     print(f"'{game.title}' aggiunto alla libreria.")
@@ -157,7 +158,7 @@ def add_playthrough(games: list[Game], game: Game) -> None:
     was_backlog = is_backlog(game)
     game.playthroughs.append(ask_new_playthrough(games))
     if was_backlog:
-        game.rating = ask_rating("Voto (1-10, Invio per saltare): ")
+        game.rating = ask_rating(f"Voto (1-{MAX_RATING}, Invio per saltare): ")
     save_library(games)
     print("Partita aggiunta.")
 
@@ -196,7 +197,7 @@ def edit_rating(games: list[Game], game: Game) -> None:
     if is_backlog(game):
         print("Aggiungi prima una partita: un gioco mai iniziato non si può votare.")
         return
-    game.rating = ask_rating("Nuovo voto (1-10, Invio per rimuoverlo): ")
+    game.rating = ask_rating(f"Nuovo voto (1-{MAX_RATING}, Invio per rimuoverlo): ")
     save_library(games)
     print("Voto aggiornato.")
 

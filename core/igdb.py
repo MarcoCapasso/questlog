@@ -9,8 +9,15 @@ from core.catalog import CatalogGame
 
 TOKEN_URL = "https://id.twitch.tv/oauth2/token"
 API_URL = "https://api.igdb.com/v4"
-COVER_URL = "https://images.igdb.com/igdb/image/upload/t_cover_big/{image_id}.jpg"
+IMAGE_URL = "https://images.igdb.com/igdb/image/upload/{size}/{image_id}.jpg"
+COVER_SIZE = "t_cover_big"
+SCREENSHOT_SIZE = "t_screenshot_big"
+BACKDROP_SIZE = "t_1080p"
 GAME_FIELDS = "fields name, cover.image_id, first_release_date, platforms.name, genres.name, summary;"
+DETAIL_FIELDS = (
+    "fields name, cover.image_id, first_release_date, platforms.name, genres.name, summary, "
+    "screenshots.image_id, artworks.image_id;"
+)
 TIMEOUT_SECONDS = 10
 SECTION_SIZE = 20
 SEARCH_SIZE = 30
@@ -75,7 +82,7 @@ class IgdbCatalog:
 
     def details(self, igdb_id: int) -> CatalogGame | None:
         """Restituisce il gioco con quell'id IGDB, oppure None se non esiste."""
-        games = parse_games(self.query("games", f"{GAME_FIELDS} where id = {igdb_id};"))
+        games = parse_games(self.query("games", f"{DETAIL_FIELDS} where id = {igdb_id};"))
         return games[0] if games else None
 
     def query(self, endpoint: str, body: str) -> list[dict[str, Any]]:
@@ -128,7 +135,10 @@ def parse_games(rows: list[dict[str, Any]]) -> list[CatalogGame]:
 def parse_game(row: dict[str, Any]) -> CatalogGame:
     """Trasforma una riga JSON di IGDB in un gioco del catalogo; i campi mancanti restano vuoti."""
     cover = row.get("cover")
-    cover_url = COVER_URL.format(image_id=cover["image_id"]) if cover else None
+    cover_url = image_url(cover["image_id"], COVER_SIZE) if cover else None
+    screenshot_ids = [image["image_id"] for image in row.get("screenshots", [])]
+    artwork_ids = [image["image_id"] for image in row.get("artworks", [])]
+    backdrop_ids = artwork_ids + screenshot_ids
     release_timestamp = row.get("first_release_date")
     release_year = time.gmtime(release_timestamp).tm_year if release_timestamp is not None else None
     return CatalogGame(
@@ -139,4 +149,11 @@ def parse_game(row: dict[str, Any]) -> CatalogGame:
         platforms=[platform["name"] for platform in row.get("platforms", [])],
         genres=[genre["name"] for genre in row.get("genres", [])],
         summary=row.get("summary", ""),
+        screenshot_urls=[image_url(image_id, SCREENSHOT_SIZE) for image_id in screenshot_ids],
+        backdrop_url=image_url(backdrop_ids[0], BACKDROP_SIZE) if backdrop_ids else None,
     )
+
+
+def image_url(image_id: str, size: str) -> str:
+    """Restituisce l'indirizzo di un'immagine IGDB nella dimensione indicata (copertina, screenshot, 1080p)."""
+    return IMAGE_URL.format(size=size, image_id=image_id)

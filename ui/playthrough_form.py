@@ -1,29 +1,32 @@
-"""Form, dentro la pagina del gioco, per registrare una nuova partita."""
+"""Pannello, dentro la pagina del gioco, per registrare una nuova partita."""
 
 from PySide6.QtCore import QDate, Qt, Signal
 from PySide6.QtWidgets import (
-    QComboBox,
-    QDateEdit,
-    QFormLayout,
+    QButtonGroup,
+    QCompleter,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
+    QToolButton,
     QVBoxLayout,
+    QWidget,
 )
 
 from core.library import validate_new_playthrough
 from core.models import Playthrough
-from ui.widgets import HoursSpinBox
+from ui.flow_layout import FlowLayout
+from ui.widgets import DateInput, HoursInput
 
 STATUS_CHOICES = [
     ("playing", "In corso"),
     ("completed", "Completata"),
     ("dropped", "Abbandonata"),
 ]
-DATE_FORMAT = "dd/MM/yyyy"
 ISO_FORMAT = "yyyy-MM-dd"
-MAX_HOURS = 99999
+PLATFORM_INPUT_WIDTH = 300
 
 
 class PlaythroughForm(QFrame):
@@ -36,35 +39,59 @@ class PlaythroughForm(QFrame):
         super().__init__()
         self.setObjectName("formPanel")
 
-        self.platform_input = QComboBox()
-        self.platform_input.setEditable(True)
-        platform_line = self.platform_input.lineEdit()
-        if platform_line is not None:
-            platform_line.setPlaceholderText("Scegli o scrivi una piattaforma")
+        title = QLabel("Nuova partita")
+        title.setObjectName("formTitle")
+        close_button = QToolButton()
+        close_button.setObjectName("closeButton")
+        close_button.setText("✕")
+        close_button.setToolTip("Chiudi")
+        close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_button.clicked.connect(self.cancelled.emit)
+        title_row = QHBoxLayout()
+        title_row.addWidget(title)
+        title_row.addStretch()
+        title_row.addWidget(close_button)
 
-        self.status_input = QComboBox()
-        for status, label in STATUS_CHOICES:
-            self.status_input.addItem(label, status)
-        self.status_input.currentIndexChanged.connect(self.update_visible_fields)
+        self.platform_buttons = QButtonGroup(self)
+        platform_pills_container = QWidget()
+        self.platform_pills = FlowLayout(platform_pills_container)
+        self.platform_input = QLineEdit()
+        self.platform_input.setObjectName("formInput")
+        self.platform_input.setPlaceholderText("Es. PC, PS5, Nintendo Switch")
+        self.platform_input.setFixedWidth(PLATFORM_INPUT_WIDTH)
+        platform_layout = QVBoxLayout()
+        platform_layout.setSpacing(0)
+        platform_layout.addWidget(platform_pills_container)
+        platform_layout.addWidget(self.platform_input)
 
-        self.hours_input = HoursSpinBox()
-        self.hours_input.setRange(0, MAX_HOURS)
-        self.hours_input.setDecimals(1)
-        self.hours_input.setSingleStep(0.5)
-        self.hours_input.setSuffix(" ore")
+        self.status_buttons = QButtonGroup(self)
+        status_row = QHBoxLayout()
+        status_row.setSpacing(8)
+        for index, (status, label) in enumerate(STATUS_CHOICES):
+            button = create_pill(label)
+            button.setProperty("status", status)
+            self.status_buttons.addButton(button, index)
+            status_row.addWidget(button)
+        status_row.addStretch()
+        self.status_buttons.idClicked.connect(self.update_visible_fields)
 
-        self.start_date_input = create_date_input()
-        self.completion_date_input = create_date_input()
+        self.hours_input = HoursInput()
+        self.start_date_input = DateInput()
+        self.completion_date_input = DateInput()
         self.start_date_input.dateChanged.connect(self.completion_date_input.setMinimumDate)
+        self.completion_caption = create_caption("Completata il")
 
-        self.form = QFormLayout()
-        self.form.setHorizontalSpacing(20)
-        self.form.setVerticalSpacing(14)
-        self.form.addRow(create_form_label("Piattaforma"), self.platform_input)
-        self.form.addRow(create_form_label("Stato"), self.status_input)
-        self.form.addRow(create_form_label("Ore giocate"), self.hours_input)
-        self.form.addRow(create_form_label("Iniziata il"), self.start_date_input)
-        self.form.addRow(create_form_label("Completata il"), self.completion_date_input)
+        numbers = QGridLayout()
+        numbers.setHorizontalSpacing(16)
+        numbers.setVerticalSpacing(8)
+        numbers.addWidget(create_caption("Ore giocate"), 0, 0)
+        numbers.addWidget(create_caption("Iniziata il"), 0, 1)
+        numbers.addWidget(self.completion_caption, 0, 2)
+        numbers.addWidget(self.hours_input, 1, 0)
+        numbers.addWidget(self.start_date_input, 1, 1)
+        numbers.addWidget(self.completion_date_input, 1, 2)
+        for column in range(3):
+            numbers.setColumnStretch(column, 1)
 
         self.error_label = QLabel()
         self.error_label.setObjectName("formError")
@@ -82,43 +109,82 @@ class PlaythroughForm(QFrame):
         actions.addWidget(save_button)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(16)
-        layout.addLayout(self.form)
+        layout.setContentsMargins(24, 20, 24, 24)
+        layout.setSpacing(10)
+        layout.addLayout(title_row)
+        layout.addSpacing(6)
+        layout.addWidget(create_caption("Piattaforma"))
+        layout.addLayout(platform_layout)
+        layout.addSpacing(10)
+        layout.addWidget(create_caption("Stato"))
+        layout.addLayout(status_row)
+        layout.addSpacing(10)
+        layout.addLayout(numbers)
         layout.addWidget(self.error_label)
+        layout.addSpacing(6)
         layout.addLayout(actions)
 
-    def start(self, platform_suggestions: list[str]) -> None:
-        """Svuota il form e propone le piattaforme indicate."""
+    def start(self, game_platforms: list[str], known_platforms: list[str]) -> None:
+        """Svuota il pannello e prepara la scelta della piattaforma.
+
+        Se IGDB indica le piattaforme del gioco, si sceglie solo tra quelle (già selezionata se è una sola).
+        Altrimenti si scrive la piattaforma, con i suggerimenti presi da quelle già usate in libreria.
+        """
+        self.create_platform_buttons(game_platforms)
+        if len(game_platforms) == 1:
+            self.platform_buttons.buttons()[0].setChecked(True)
         self.platform_input.clear()
-        self.platform_input.addItems(platform_suggestions)
-        self.platform_input.setCurrentText("")
-        self.status_input.setCurrentIndex(0)
-        self.hours_input.setValue(0)
+        self.platform_input.setVisible(not game_platforms)
+        completer = QCompleter(known_platforms, self)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.platform_input.setCompleter(completer)
+
+        self.status_buttons.button(0).setChecked(True)
+        self.hours_input.set_value(0)
         today = QDate.currentDate()
         for date_input in (self.start_date_input, self.completion_date_input):
             date_input.setMaximumDate(today)
             date_input.setDate(today)
         self.error_label.hide()
         self.update_visible_fields()
-        self.platform_input.setFocus()
 
-    def update_visible_fields(self) -> None:
-        """Mostra la data di completamento solo per una partita completata."""
-        self.form.setRowVisible(self.completion_date_input, self.selected_status() == "completed")
+    def create_platform_buttons(self, platforms: list[str]) -> None:
+        """Sostituisce le pillole delle piattaforme con quelle indicate; nessuna è selezionata."""
+        for old_button in self.platform_buttons.buttons():
+            self.platform_buttons.removeButton(old_button)
+            self.platform_pills.removeWidget(old_button)
+            old_button.hide()
+            old_button.deleteLater()
+        for platform in platforms:
+            button = create_pill(platform)
+            self.platform_buttons.addButton(button)
+            self.platform_pills.addWidget(button)
+
+    def selected_platform(self) -> str:
+        """Restituisce la piattaforma della pillola scelta, oppure quella scritta nel campo."""
+        checked_button = self.platform_buttons.checkedButton()
+        if checked_button is not None:
+            return checked_button.text()
+        return self.platform_input.text().strip()
 
     def selected_status(self) -> str:
         """Restituisce lo stato scelto, come valore interno ("playing", "completed"...)."""
-        return str(self.status_input.currentData())
+        return STATUS_CHOICES[self.status_buttons.checkedId()][0]
+
+    def update_visible_fields(self) -> None:
+        """Mostra la data di completamento solo per una partita completata."""
+        completed = self.selected_status() == "completed"
+        self.completion_caption.setVisible(completed)
+        self.completion_date_input.setVisible(completed)
 
     def submit(self) -> None:
         """Consegna la partita se i dati sono validi, altrimenti mostra il primo errore."""
-        platform = self.platform_input.currentText().strip()
-        error = "Indica la piattaforma su cui giochi." if platform == "" else None
+        platform = self.selected_platform()
         start_date = self.start_date_input.date().toString(ISO_FORMAT)
         completion_date = None
         if self.selected_status() == "completed":
             completion_date = self.completion_date_input.date().toString(ISO_FORMAT)
+        error = "Indica la piattaforma su cui giochi." if platform == "" else None
         if error is None:
             error = validate_new_playthrough(
                 self.selected_status(), self.hours_input.value(), start_date, completion_date
@@ -132,17 +198,17 @@ class PlaythroughForm(QFrame):
         )
 
 
-def create_form_label(text: str) -> QLabel:
-    """Restituisce l'etichetta di un campo, alta quanto il campo e centrata in verticale."""
-    label = QLabel(text)
-    label.setObjectName("formLabel")
-    label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-    return label
+def create_caption(text: str) -> QLabel:
+    """Restituisce la piccola etichetta sopra un campo."""
+    caption = QLabel(text)
+    caption.setObjectName("fieldCaption")
+    return caption
 
 
-def create_date_input() -> QDateEdit:
-    """Restituisce un campo data con calendario e formato italiano."""
-    date_input = QDateEdit()
-    date_input.setCalendarPopup(True)
-    date_input.setDisplayFormat(DATE_FORMAT)
-    return date_input
+def create_pill(text: str) -> QPushButton:
+    """Restituisce un bottone a pillola selezionabile."""
+    button = QPushButton(text)
+    button.setObjectName("pillButton")
+    button.setCheckable(True)
+    button.setCursor(Qt.CursorShape.PointingHandCursor)
+    return button

@@ -51,6 +51,8 @@ L'app desktop cerca i giochi nel catalogo di [IGDB](https://www.igdb.com). Servo
 
 Il file `.env` è escluso dal repository. Senza credenziali l'app usa un piccolo catalogo di prova.
 
+Le descrizioni di IGDB sono in inglese. Per vederle in italiano aggiungi nel `.env` una chiave dell'[API DeepL](https://www.deepl.com/pro-api) (`DEEPL_API_KEY`). Va bene anche il piano gratuito. Ogni descrizione viene tradotta una volta sola e salvata in `data/cache/translations.json`.
+
 ## Regole della libreria
 
 ### Giochi e partite
@@ -83,7 +85,7 @@ Un gioco ha un titolo, un voto e zero o più partite. Piattaforma, stato, ore e 
 
 ### Voto
 
-- Facoltativo, un numero intero da 1 a 10.
+- Facoltativo, da 1 a 5 stelle (solo numeri interi).
 - Un valore non valido viene rifiutato, mai arrotondato.
 - È unico per il gioco, non per la singola partita.
 - Un gioco in backlog non può avere un voto.

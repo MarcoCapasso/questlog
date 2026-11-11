@@ -2,20 +2,21 @@
 
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QScrollArea,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
 from core.catalog import CatalogGame, GameCatalog, find_library_game, game_from_catalog, link_to_catalog
-from core.library import calculate_total_hours, find_game_index_by_title, find_platform_spelling, known_platforms
+from core.library import (
+    calculate_total_hours,
+    find_game_index_by_title,
+    find_platform_spelling,
+    is_backlog,
+    known_platforms,
+)
 from core.models import Game, Playthrough
 from core.repository import GameRepository
+from core.translation import Translator, translate_summary
+from ui.backdrop import BackdropWidget
+from ui.carousel import ImageCarousel
 from ui.covers import CoverLabel
 from ui.game_card import PLAYTHROUGH_STATUS_LABELS, format_release_year
 from ui.playthrough_form import PlaythroughForm
@@ -34,10 +35,12 @@ class GamePage(QWidget):
     back_requested = Signal()
     library_changed = Signal()
 
-    def __init__(self, repository: GameRepository, catalog: GameCatalog) -> None:
+    def __init__(self, repository: GameRepository, catalog: GameCatalog, translator: Translator) -> None:
         super().__init__()
         self.repository = repository
         self.catalog = catalog
+        self.translator = translator
+        self.details_loaded = False
         self.games: list[Game] = []
         self.platform_suggestions: list[str] = []
         self.game: Game | None = None
@@ -63,16 +66,28 @@ class GamePage(QWidget):
         self.summary_label.setObjectName("gameSummary")
         self.summary_label.setWordWrap(True)
         self.summary_label.setMaximumWidth(SUMMARY_WIDTH)
+        self.carousel = ImageCarousel(SUMMARY_WIDTH)
+        self.screenshots_section = QWidget()
+        screenshots_layout = QVBoxLayout(self.screenshots_section)
+        screenshots_layout.setContentsMargins(0, 0, 0, 0)
+        screenshots_layout.setSpacing(14)
+        screenshots_layout.addWidget(create_section_title("Screenshot"))
+        screenshots_layout.addWidget(self.carousel)
+        self.screenshots_section.hide()
 
         self.add_button = QPushButton("Aggiungi alla libreria")
         self.add_button.setObjectName("primaryButton")
         self.add_button.clicked.connect(self.add_to_library)
         self.in_library_chip = QLabel("Nella tua libreria")
         self.in_library_chip.setObjectName("libraryChip")
+        self.rating_input = RatingInput()
+        self.rating_input.rating_changed.connect(self.change_rating)
         actions = QHBoxLayout()
+        actions.setSpacing(12)
         actions.addWidget(self.add_button)
         actions.addWidget(self.in_library_chip)
         actions.addStretch()
+        actions.addWidget(self.rating_input)
 
         info = QVBoxLayout()
         info.setSpacing(10)
@@ -88,8 +103,6 @@ class GamePage(QWidget):
         hero.addLayout(self.cover_holder)
         hero.addLayout(info, stretch=1)
 
-        self.rating_input = RatingInput()
-        self.rating_input.rating_changed.connect(self.change_rating)
         self.total_hours_label = QLabel()
         self.total_hours_label.setObjectName("gameMeta")
 
@@ -112,32 +125,29 @@ class GamePage(QWidget):
         library_layout = QVBoxLayout(self.library_section)
         library_layout.setContentsMargins(0, 0, 0, 0)
         library_layout.setSpacing(14)
-        library_layout.addWidget(create_section_title("Il tuo voto"))
-        library_layout.addWidget(self.rating_input)
-        library_layout.addSpacing(18)
         library_layout.addLayout(playthroughs_heading)
         library_layout.addWidget(self.total_hours_label)
         library_layout.addWidget(self.playthrough_form)
         library_layout.addLayout(self.playthrough_list)
 
-        content = QWidget()
-        content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(0, 0, 0, PAGE_MARGIN)
+        self.backdrop = BackdropWidget()
+        content_layout = QVBoxLayout(self.backdrop)
+        content_layout.setContentsMargins(PAGE_MARGIN, 20, PAGE_MARGIN, PAGE_MARGIN)
         content_layout.setSpacing(28)
+        content_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignLeft)
         content_layout.addLayout(hero)
         content_layout.addWidget(self.summary_label)
         content_layout.addWidget(self.library_section)
+        content_layout.addWidget(self.screenshots_section)
         content_layout.addStretch()
 
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(content)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setWidget(self.backdrop)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(PAGE_MARGIN, 20, PAGE_MARGIN, 0)
-        layout.setSpacing(16)
-        layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(scroll_area)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.scroll_area)
 
     def show_catalog_game(self, catalog_game: CatalogGame) -> None:
         """Mostra un gioco scelto nel catalogo; se era già in libreria con lo stesso titolo, lo collega a IGDB."""
@@ -147,7 +157,8 @@ class GamePage(QWidget):
         if self.game is not None and self.game.igdb_id is None:
             link_to_catalog(self.game, catalog_game)
             self.save()
-        self.update_view()
+        self.start_view()
+        self.load_details(catalog_game.igdb_id)
 
     def show_library_game(self, game: Game) -> None:
         """Mostra un gioco della libreria e, se è collegato a IGDB, ne scarica la descrizione."""
@@ -155,16 +166,45 @@ class GamePage(QWidget):
         index = find_game_index_by_title(self.games, game.title)
         self.game = self.games[index] if index is not None else game
         self.catalog_game = None
-        self.update_view()
+        self.start_view()
         if self.game.igdb_id is not None:
-            igdb_id = self.game.igdb_id
-            run_in_background(lambda: self.catalog.details(igdb_id), self.on_details_loaded, self.ignore_error)
+            self.load_details(self.game.igdb_id)
 
-    def on_details_loaded(self, catalog_game: CatalogGame | None) -> None:
-        """Completa la pagina con i dati di IGDB, se riguardano ancora il gioco mostrato."""
-        if catalog_game is None or self.game is None or self.game.igdb_id != catalog_game.igdb_id:
+    def start_view(self) -> None:
+        """Riparte dall'alto della pagina, senza sfondo e immagini finché non arrivano i dettagli."""
+        self.details_loaded = False
+        self.playthrough_form.hide()
+        self.backdrop.set_url(None)
+        self.carousel.set_images([])
+        self.screenshots_section.hide()
+        self.scroll_area.verticalScrollBar().setValue(0)
+        self.update_view()
+
+    def load_details(self, igdb_id: int) -> None:
+        """Scarica in background i dettagli da IGDB (immagini e descrizione) e traduce la descrizione."""
+        catalog = self.catalog
+        translator = self.translator
+
+        def fetch_details() -> CatalogGame | None:
+            details = catalog.details(igdb_id)
+            if details is not None:
+                translate_summary(details, translator)
+            return details
+
+        run_in_background(fetch_details, self.on_details_loaded, self.ignore_error)
+
+    def on_details_loaded(self, details: CatalogGame | None) -> None:
+        """Completa la pagina con sfondo, immagini e descrizione, se riguardano ancora il gioco mostrato."""
+        shown_id = self.catalog_game.igdb_id if self.catalog_game is not None else None
+        if self.game is not None and self.game.igdb_id is not None:
+            shown_id = self.game.igdb_id
+        if details is None or details.igdb_id != shown_id:
             return
-        self.catalog_game = catalog_game
+        self.catalog_game = details
+        self.details_loaded = True
+        self.backdrop.set_url(details.backdrop_url)
+        self.carousel.set_images(details.screenshot_urls)
+        self.screenshots_section.setVisible(bool(details.screenshot_urls))
         self.update_view()
 
     def ignore_error(self, _message: str) -> None:
@@ -190,15 +230,15 @@ class GamePage(QWidget):
         platforms = " · ".join(catalog_game.platforms) if catalog_game is not None else ""
         self.platforms_label.setText(platforms)
         self.platforms_label.setVisible(platforms != "")
-        summary = catalog_game.summary if catalog_game is not None else ""
+        summary = catalog_game.summary if catalog_game is not None and self.details_loaded else ""
         self.summary_label.setText(summary)
         self.summary_label.setVisible(summary != "")
 
         in_library = self.game is not None
         self.add_button.setVisible(not in_library)
         self.in_library_chip.setVisible(in_library)
+        self.rating_input.setVisible(self.game is not None and not is_backlog(self.game))
         self.library_section.setVisible(in_library)
-        self.playthrough_form.hide()
         if self.game is not None:
             self.rating_input.set_rating(None if self.game.rating is None else int(self.game.rating))
             self.render_playthroughs(self.game)
@@ -243,13 +283,10 @@ class GamePage(QWidget):
         self.save()
 
     def open_playthrough_form(self) -> None:
-        """Apre il form della nuova partita, proponendo prima le piattaforme del gioco e poi quelle già usate."""
-        suggestions = list(self.catalog_game.platforms) if self.catalog_game is not None else []
-        for platform in known_platforms(self.games):
-            if platform not in suggestions:
-                suggestions.append(platform)
-        self.platform_suggestions = suggestions
-        self.playthrough_form.start(suggestions)
+        """Apre il form della nuova partita con le piattaforme del gioco secondo IGDB, se le conosciamo."""
+        game_platforms = list(self.catalog_game.platforms) if self.catalog_game is not None else []
+        self.platform_suggestions = game_platforms
+        self.playthrough_form.start(game_platforms, known_platforms(self.games))
         self.playthrough_form.show()
 
     def add_playthrough(self, playthrough: Playthrough) -> None:
@@ -261,6 +298,7 @@ class GamePage(QWidget):
             if suggestion.lower() == playthrough.platform.lower():
                 playthrough.platform = suggestion
         self.game.playthroughs.append(playthrough)
+        self.playthrough_form.hide()
         self.save()
         self.update_view()
 

@@ -2,6 +2,7 @@ from core.library import (
     BACKLOG,
     apply_status_change,
     calculate_total_hours,
+    convert_rating_to_five_stars,
     count_by_summary_status,
     filter_games,
     find_game_index_by_title,
@@ -101,17 +102,17 @@ def test_has_completed_playthrough():
 
 def test_remove_playthrough_keeps_rating_when_others_remain():
     game = make_game("Hades", make_playthrough(), make_playthrough())
-    game.rating = 8
+    game.rating = 4
 
     remove_playthrough(game, 0)
 
     assert len(game.playthroughs) == 1
-    assert game.rating == 8
+    assert game.rating == 4
 
 
 def test_remove_last_playthrough_clears_rating():
     game = make_game("Hades", make_playthrough())
-    game.rating = 8
+    game.rating = 4
 
     remove_playthrough(game, 0)
 
@@ -233,12 +234,19 @@ def test_validate_new_title_accepts_new_title():
     assert validate_new_title([make_game("Hades")], "Celeste") is None
 
 
-def test_rating_must_be_a_whole_number_from_1_to_10():
+def test_rating_must_be_a_whole_number_from_1_to_5():
     assert is_valid_rating(1)
-    assert is_valid_rating(10)
-    assert not is_valid_rating(7.5)
+    assert is_valid_rating(5)
+    assert not is_valid_rating(3.5)
     assert not is_valid_rating(0)
-    assert not is_valid_rating(11)
+    assert not is_valid_rating(6)
+
+
+def test_old_ratings_round_up_to_five_stars():
+    assert convert_rating_to_five_stars(10) == 5
+    assert convert_rating_to_five_stars(9) == 5
+    assert convert_rating_to_five_stars(8) == 4
+    assert convert_rating_to_five_stars(1) == 1
 
 
 def test_known_platforms_lists_each_platform_once_in_alphabetical_order():

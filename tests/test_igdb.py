@@ -76,3 +76,20 @@ def test_wrong_credentials_raise_igdb_error(monkeypatch):
 
     with pytest.raises(IgdbError):
         IgdbCatalog("id", "sbagliato").search("zelda")
+
+
+def test_parse_game_uses_artwork_as_backdrop_and_lists_screenshots():
+    row = {
+        "id": 1,
+        "name": "Celeste",
+        "screenshots": [{"id": 1, "image_id": "sc1"}, {"id": 2, "image_id": "sc2"}],
+        "artworks": [{"id": 3, "image_id": "ar1"}],
+    }
+
+    game = parse_game(row)
+
+    assert game.screenshot_urls == [
+        "https://images.igdb.com/igdb/image/upload/t_screenshot_big/sc1.jpg",
+        "https://images.igdb.com/igdb/image/upload/t_screenshot_big/sc2.jpg",
+    ]
+    assert game.backdrop_url == "https://images.igdb.com/igdb/image/upload/t_1080p/ar1.jpg"

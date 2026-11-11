@@ -5,7 +5,7 @@ from datetime import date
 
 import pandas as pd
 
-from core.library import calculate_total_hours, has_completed_playthrough, is_backlog
+from core.library import MAX_RATING, calculate_total_hours, has_completed_playthrough, is_backlog
 from core.models import Game, Playthrough
 
 
@@ -151,10 +151,10 @@ def format_playthrough_line(playthrough: Playthrough) -> str:
 
 
 def format_rating(rating: float | None) -> str:
-    """Restituisce il voto formattato, oppure un trattino se manca."""
+    """Restituisce il voto formattato come '4/5', oppure un trattino se manca."""
     if rating is None:
         return "-"
-    return f"{rating:g}"
+    return f"{rating:g}/{MAX_RATING}"
 
 
 def format_date(iso_date: str | None) -> str:
@@ -175,4 +175,4 @@ def format_percentage(value: float) -> str:
     """Restituisce il valore come percentuale intera, oppure un trattino se non è calcolabile."""
     if math.isnan(value):
         return "-"
-    return f"{value:.0%}"
+    return f"{value:.0%}"

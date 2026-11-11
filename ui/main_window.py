@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 from core.catalog import CatalogGame, GameCatalog
 from core.models import Game
 from core.repository import GameRepository
+from core.translation import Translator
 from ui.catalog_page import CatalogPage
 from ui.game_page import GamePage
 from ui.library_page import LibraryPage
@@ -25,7 +26,7 @@ LIBRARY_NAV_INDEX = 1
 class MainWindow(QMainWindow):
     """La finestra principale: barra di navigazione in alto e, sotto, una pagina alla volta."""
 
-    def __init__(self, repository: GameRepository, catalog: GameCatalog) -> None:
+    def __init__(self, repository: GameRepository, catalog: GameCatalog, translator: Translator) -> None:
         super().__init__()
         self.setWindowTitle("Questlog")
         screen_area = self.screen().availableGeometry()
@@ -34,7 +35,7 @@ class MainWindow(QMainWindow):
 
         self.library_page = LibraryPage(repository)
         self.catalog_page = CatalogPage(catalog, repository)
-        self.game_page = GamePage(repository, catalog)
+        self.game_page = GamePage(repository, catalog, translator)
         self.page_before_game: QWidget = self.library_page
 
         self.library_page.add_requested.connect(self.show_catalog_page)

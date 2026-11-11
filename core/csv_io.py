@@ -4,7 +4,13 @@ import csv
 import math
 from datetime import date, datetime
 
-from core.library import PLAYTHROUGH_STATUSES, find_game_index_by_title, is_valid_date_order, is_valid_rating
+from core.library import (
+    MAX_RATING,
+    PLAYTHROUGH_STATUSES,
+    find_game_index_by_title,
+    is_valid_date_order,
+    is_valid_rating,
+)
 from core.models import Game, Playthrough
 from core.storage import DATA_DIR
 
@@ -128,7 +134,7 @@ def parse_rating(text: str) -> float | None:
         return None
     rating = parse_number(text)
     if not is_valid_rating(rating):
-        raise ValueError(f"voto '{text}' non valido (intero da 1 a 10).")
+        raise ValueError(f"voto '{text}' non valido (intero da 1 a {MAX_RATING}).")
     return rating
 
 

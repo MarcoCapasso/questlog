@@ -62,24 +62,28 @@ def cover_loader() -> CoverLoader:
 
 
 class CoverLabel(QLabel):
-    """Riquadro della copertina: grigio finché l'immagine non arriva, poi la mostra con gli angoli arrotondati."""
+    """Riquadro di un'immagine remota: grigio finché l'immagine non arriva, poi la mostra con gli angoli arrotondati."""
 
     def __init__(self, url: str | None, size: QSize, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("cover")
         self.setFixedSize(size)
+        self.url: str | None = None
+        cover_loader().loaded.connect(self.on_cover_loaded)
+        self.set_url(url)
+
+    def set_url(self, url: str | None) -> None:
+        """Cambia l'immagine mostrata: quella nuova appare subito se è già scaricata, altrimenti appena arriva."""
         self.url = url
+        self.clear()
         if url is None:
             return
-        loader = cover_loader()
-        pixmap = loader.request(url)
+        pixmap = cover_loader().request(url)
         if pixmap is not None:
             self.show_cover(pixmap)
-        else:
-            loader.loaded.connect(self.on_cover_loaded)
 
     def on_cover_loaded(self, url: str, pixmap: QPixmap) -> None:
-        """Mostra la copertina appena scaricata, se è quella di questo riquadro."""
+        """Mostra l'immagine appena scaricata, se è quella di questo riquadro."""
         if url == self.url:
             self.show_cover(pixmap)
 

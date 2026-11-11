@@ -293,8 +293,72 @@ QLabel#formError {
 }
 
 QFrame#formPanel {
-    background-color: #181B1F;
-    border-radius: 12px;
+    background-color: #16191C;
+    border: 1px solid #2A2F35;
+    border-radius: 14px;
+}
+
+QLabel#formTitle {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+QToolButton#closeButton {
+    background: transparent;
+    border: none;
+    border-radius: 14px;
+    color: #AEB5BD;
+    font-size: 14px;
+    min-width: 28px;
+    min-height: 28px;
+}
+
+QToolButton#closeButton:hover {
+    background-color: #2A2F35;
+    color: #FFFFFF;
+}
+
+QLabel#fieldCaption {
+    color: #8A929B;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QLineEdit#formInput {
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+QPushButton#pillButton {
+    background-color: transparent;
+    color: #C2C8CF;
+    border: 1px solid #343A41;
+    border-radius: 16px;
+    padding: 7px 16px;
+    font-weight: 600;
+}
+
+QPushButton#pillButton:hover {
+    border: 1px solid #5A6169;
+    color: #FFFFFF;
+}
+
+QPushButton#pillButton:checked {
+    background-color: #F1F3F5;
+    border: 1px solid #F1F3F5;
+    color: #101214;
+}
+
+QPushButton#pillButton[status="playing"]:checked {
+    background-color: #8FE0A8;
+    border: 1px solid #8FE0A8;
+    color: #0E2415;
+}
+
+QPushButton#pillButton[status="dropped"]:checked {
+    background-color: #F2B48C;
+    border: 1px solid #F2B48C;
+    color: #2A1608;
 }
 
 QComboBox QLineEdit,
@@ -306,8 +370,8 @@ QComboBox QLineEdit:focus {
 }
 
 QComboBox,
-QDoubleSpinBox,
-QDateEdit {
+QDateEdit,
+QFrame#hoursInput {
     background-color: #1C2024;
     border: 1px solid transparent;
     border-radius: 8px;
@@ -317,8 +381,8 @@ QDateEdit {
 }
 
 QComboBox:focus,
-QDoubleSpinBox:focus,
-QDateEdit:focus {
+QDateEdit:focus,
+QFrame#hoursInput[focused="true"] {
     border: 1px solid #4A5058;
 }
 
@@ -342,16 +406,79 @@ QComboBox QAbstractItemView {
     color: #F1F3F5;
 }
 
-QDoubleSpinBox::up-button,
-QDoubleSpinBox::down-button {
+QFrame#hoursInput {
+    padding: 0px;
+}
+
+QLineEdit#hoursNumber,
+QLineEdit#hoursNumber:focus {
+    background: transparent;
+    border: none;
+    border-radius: 0px;
+    padding: 0px;
+}
+
+QLabel#hoursUnit {
+    color: #AEB5BD;
+}
+
+/* Calendario */
+
+QCalendarWidget QWidget#qt_calendar_navigationbar {
+    background-color: #1C2024;
+    padding: 6px 4px;
+}
+
+QCalendarWidget QToolButton {
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #F1F3F5;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 6px 10px;
+}
+
+QCalendarWidget QToolButton:hover {
+    background-color: #2A2F35;
+}
+
+QCalendarWidget QToolButton::menu-indicator {
+    image: none;
+    width: 0px;
+}
+
+QCalendarWidget QToolButton#qt_calendar_prevmonth {
+    qproperty-icon: url({icons}/chevron-left.svg);
+}
+
+QCalendarWidget QToolButton#qt_calendar_nextmonth {
+    qproperty-icon: url({icons}/chevron-right.svg);
+}
+
+QCalendarWidget QSpinBox {
+    background-color: #2A2F35;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: #F1F3F5;
+    selection-background-color: #8FE0A8;
+    selection-color: #0E2415;
+}
+
+QCalendarWidget QSpinBox::up-button,
+QCalendarWidget QSpinBox::down-button {
     width: 0px;
     border: none;
 }
 
-QDoubleSpinBox::up-arrow,
-QDoubleSpinBox::down-arrow {
-    width: 0px;
-    height: 0px;
+QCalendarWidget QAbstractItemView {
+    background-color: #1C2024;
+    color: #F1F3F5;
+    outline: 0;
+    font-size: 13px;
+    selection-background-color: transparent;
+    selection-color: #F1F3F5;
 }
 
 QCheckBox {
@@ -376,13 +503,44 @@ QCheckBox::indicator:checked {
     image: url({icons}/check.svg);
 }
 
+/* Carosello */
+
+QToolButton#carouselArrow {
+    background-color: rgba(16, 18, 20, 180);
+    border: none;
+    border-radius: 20px;
+}
+
+QToolButton#carouselArrow:hover {
+    background-color: rgba(16, 18, 20, 230);
+}
+
+QLabel#carouselCounter {
+    background-color: rgba(16, 18, 20, 180);
+    border-radius: 10px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 8px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #2A2F35;
+    border-radius: 4px;
+    min-width: 40px;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
 QToolButton#ratingStar {
     background: transparent;
     border: none;
     padding: 2px;
-}
-
-QLabel#ratingValue {
-    color: #C2C8CF;
-    font-weight: 600;
 }
