@@ -1,3 +1,5 @@
+/* Finestra e testo di base */
+
 QMainWindow {
     background-color: #101214;
 }
@@ -7,6 +9,8 @@ QWidget {
     font-family: "Segoe UI";
     font-size: 14px;
 }
+
+/* Barra di navigazione */
 
 QFrame#header {
     border: none;
@@ -40,6 +44,8 @@ QPushButton#navButton:checked {
     font-weight: 700;
 }
 
+/* Pagine e scorrimento */
+
 QLabel#pageTitle {
     font-size: 28px;
     font-weight: 800;
@@ -54,12 +60,31 @@ QScrollArea > QWidget > QWidget {
     background: transparent;
 }
 
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #2A2F35;
+    border-radius: 5px;
+    min-height: 40px;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* Card dei giochi */
+
 QLabel#cover {
     background-color: #23282E;
     border-radius: 8px;
 }
 
 QLabel#statusChip {
+    border: 1px solid transparent;
     border-radius: 10px;
     padding: 3px 10px;
     font-size: 12px;
@@ -83,6 +108,16 @@ QLabel#statusChip[status="dropped"] {
     color: #2A1608;
 }
 
+QLabel#extraChip {
+    border: 1px solid #4A5058;
+    border-radius: 10px;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    background-color: transparent;
+    color: #C2C8CF;
+}
+
 QLabel#cardTitle {
     font-size: 15px;
     font-weight: 600;
@@ -93,21 +128,14 @@ QLabel#cardDetails {
     color: #AEB5BD;
 }
 
-QScrollBar:vertical {
-    background: transparent;
-    width: 10px;
+QToolTip {
+    background-color: #1C2024;
+    color: #F1F3F5;
+    border: 1px solid #2A2F35;
+    padding: 6px 8px;
 }
 
-QScrollBar::handle:vertical {
-    background-color: #2A2F35;
-    border-radius: 5px;
-    min-height: 40px;
-}
-
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}
+/* Ricerca e filtri */
 
 QLineEdit {
     background-color: #1C2024;
@@ -123,22 +151,41 @@ QLineEdit:focus {
     border: 1px solid #4A5058;
 }
 
-QPushButton#filterButton {
-    background-color: transparent;
+QPushButton#filtersButton {
+    background-color: #1C2024;
     color: #F1F3F5;
     border: 1px solid transparent;
-    border-radius: 8px;
-    padding: 9px 12px;
-    text-align: left;
-    font-weight: 500;
+    border-radius: 16px;
+    padding: 8px 16px;
+    font-weight: 600;
 }
 
-QPushButton#filterButton:hover {
-    background-color: #1C2024;
-}
-
-QPushButton#filterButton:checked {
+QPushButton#filtersButton:hover {
     background-color: #252A30;
+}
+
+QPushButton#filtersButton::menu-indicator {
+    image: none;
+    width: 0px;
+}
+
+QMenu {
+    background-color: #1C2024;
+    border: 1px solid #2A2F35;
+    border-radius: 10px;
+    padding: 6px;
+}
+
+QMenu::item {
+    padding: 8px 16px 8px 30px;
+    border-radius: 6px;
+    color: #F1F3F5;
+}
+
+QMenu::item:selected {
+    background-color: #2A2F35;
+}
+
+QMenu::item:checked {
     font-weight: 700;
 }
-
