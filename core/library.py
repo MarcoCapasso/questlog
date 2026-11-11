@@ -118,3 +118,13 @@ def find_platform_spelling(games: list[Game], platform: str) -> str:
             if playthrough.platform.lower() == platform.lower():
                 return playthrough.platform
     return platform
+
+
+def summary_status(game: Game) -> str:
+    """Restituisce lo stato che riassume il gioco: in corso, completato, abbandonato o backlog."""
+    if is_backlog(game):
+        return BACKLOG
+    for status in PLAYTHROUGH_STATUSES:
+        if has_playthrough_with_status(game, status):
+            return status
+    return BACKLOG

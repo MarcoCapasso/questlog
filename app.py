@@ -4,6 +4,7 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
+from core.repository import JsonGameRepository
 from ui.main_window import MainWindow
 from ui.theme import load_stylesheet
 
@@ -13,7 +14,7 @@ def main() -> None:
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     app.setStyleSheet(load_stylesheet())
-    window = MainWindow()
+    window = MainWindow(JsonGameRepository())
     window.show()
     sys.exit(app.exec())
 

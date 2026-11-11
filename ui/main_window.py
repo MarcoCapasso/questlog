@@ -12,13 +12,14 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
-PAGE_NAMES = ["Home", "Libreria", "Statistiche",]
+from core.repository import GameRepository
+from ui.library_page import LibraryPage
 
 
 class MainWindow(QMainWindow):
     """La finestra principale: barra di navigazione in alto e pagine sotto."""
 
-    def __init__(self) -> None:
+    def __init__(self, repository: GameRepository) -> None:
         super().__init__()
         self.setWindowTitle("Questlog")
         screen_area = self.screen().availableGeometry()
@@ -36,13 +37,18 @@ class MainWindow(QMainWindow):
         logo.setObjectName("logo")
         header_layout.addWidget(logo)
 
-        for index, name in enumerate(PAGE_NAMES):
+        pages = [
+            ("Home", create_placeholder_page("Home")),
+            ("Libreria", LibraryPage(repository)),
+            ("Statistiche", create_placeholder_page("Statistiche")),
+        ]
+        for index, (name, page) in enumerate(pages):
             button = QPushButton(name)
             button.setObjectName("navButton")
             button.setCheckable(True)
             self.nav_buttons.addButton(button, index)
             header_layout.addWidget(button)
-            self.pages.addWidget(create_placeholder_page(name))
+            self.pages.addWidget(page)
         header_layout.addStretch()
 
         self.nav_buttons.idClicked.connect(self.pages.setCurrentIndex)

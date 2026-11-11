@@ -39,3 +39,72 @@ QPushButton#navButton:checked {
     color: #101214;
     font-weight: 700;
 }
+
+QLabel#pageTitle {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+QScrollArea {
+    background: transparent;
+    border: none;
+}
+
+QScrollArea > QWidget > QWidget {
+    background: transparent;
+}
+
+QLabel#cover {
+    background-color: #23282E;
+    border-radius: 8px;
+}
+
+QLabel#statusChip {
+    border-radius: 10px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    background-color: #2A2F35;
+    color: #F1F3F5;
+}
+
+QLabel#statusChip[status="playing"] {
+    background-color: #8FE0A8;
+    color: #0E2415;
+}
+
+QLabel#statusChip[status="completed"] {
+    background-color: #F1F3F5;
+    color: #101214;
+}
+
+QLabel#statusChip[status="dropped"] {
+    background-color: #F2B48C;
+    color: #2A1608;
+}
+
+QLabel#cardTitle {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+QLabel#cardDetails {
+    font-size: 13px;
+    color: #AEB5BD;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #2A2F35;
+    border-radius: 5px;
+    min-height: 40px;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}

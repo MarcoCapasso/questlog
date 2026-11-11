@@ -10,6 +10,7 @@ from core.library import (
     is_backlog,
     is_valid_date_order,
     remove_playthrough,
+    summary_status,
 )
 from core.models import Game, Playthrough
 
@@ -162,3 +163,13 @@ def test_platform_spelling_keeps_new_platform_as_typed():
     games = [Game("Hades", 9, [Playthrough("PS4", "completed", 40)])]
 
     assert find_platform_spelling(games, "Switch") == "Switch"
+
+
+def test_summary_status_prefers_playing_over_completed():
+    game = make_game("Hades", make_playthrough("completed"), make_playthrough("playing"))
+
+    assert summary_status(game) == "playing"
+
+
+def test_summary_status_of_game_without_playthroughs_is_backlog():
+    assert summary_status(make_game("Hades")) == BACKLOG
