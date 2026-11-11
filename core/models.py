@@ -15,7 +15,9 @@ class Playthrough:
 
 @dataclass
 class Game:
-    """Un gioco della libreria con voto e l'elenco delle sue partite."""
+    """Un gioco della libreria con voto, partite e, se arriva da IGDB, il suo id e la copertina."""
     title: str
     rating: float | None = None
     playthroughs: list[Playthrough] = field(default_factory=list)
+    igdb_id: int | None = None
+    cover_url: str | None = None

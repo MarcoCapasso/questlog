@@ -135,6 +135,65 @@ QToolTip {
     padding: 6px 8px;
 }
 
+QLabel#libraryChip {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    background-color: #8FE0A8;
+    color: #0E2415;
+}
+
+/* Catalogo */
+
+QLineEdit#catalogSearch {
+    border-radius: 22px;
+    padding: 11px 20px;
+    font-size: 15px;
+}
+
+QLabel#sectionTitle {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+QLabel#sectionMessage {
+    color: #AEB5BD;
+}
+
+QLabel#demoNotice {
+    color: #E3B873;
+    font-size: 13px;
+}
+
+/* Pagina del gioco */
+
+QLabel#gameTitle {
+    font-size: 40px;
+    font-weight: 800;
+}
+
+QLabel#gameMeta {
+    font-size: 14px;
+    color: #AEB5BD;
+}
+
+QLabel#gameSummary {
+    font-size: 15px;
+    color: #D5DAE0;
+}
+
+QFrame#playthroughRow {
+    background-color: #181B1F;
+    border-radius: 12px;
+}
+
+QLabel#playthroughHours {
+    font-size: 22px;
+    font-weight: 800;
+}
+
 /* Ricerca e filtri */
 
 QLineEdit {
@@ -164,11 +223,6 @@ QPushButton#filtersButton:hover {
     background-color: #252A30;
 }
 
-QPushButton#filtersButton::menu-indicator {
-    image: none;
-    width: 0px;
-}
-
 QMenu {
     background-color: #1C2024;
     border: 1px solid #2A2F35;
@@ -190,7 +244,7 @@ QMenu::item:checked {
     font-weight: 700;
 }
 
-/* Bottoni e finestre di dialogo */
+/* Bottoni */
 
 QPushButton {
     background-color: #1C2024;
@@ -205,22 +259,130 @@ QPushButton:hover {
     background-color: #252A30;
 }
 
-QPushButton#primaryButton,
-QDialogButtonBox QPushButton:default {
+QPushButton#primaryButton {
     background-color: #F1F3F5;
     color: #101214;
     border: 1px solid #F1F3F5;
 }
 
-QPushButton#primaryButton:hover,
-QDialogButtonBox QPushButton:default:hover {
+QPushButton#primaryButton:hover {
     background-color: #FFFFFF;
 }
 
-QDialog {
-    background-color: #15181B;
+QPushButton#backButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    color: #AEB5BD;
+    padding: 6px 0px;
+    font-weight: 600;
+}
+
+QPushButton#backButton:hover {
+    color: #FFFFFF;
+}
+
+/* Form */
+
+QLabel#formLabel {
+    min-height: 38px;
+    color: #C2C8CF;
 }
 
 QLabel#formError {
     color: #FF9B9B;
+}
+
+QFrame#formPanel {
+    background-color: #181B1F;
+    border-radius: 12px;
+}
+
+QComboBox QLineEdit,
+QComboBox QLineEdit:focus {
+    background: transparent;
+    border: none;
+    border-radius: 0px;
+    padding: 0px;
+}
+
+QComboBox,
+QDoubleSpinBox,
+QDateEdit {
+    background-color: #1C2024;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 6px 12px;
+    min-height: 24px;
+    color: #F1F3F5;
+}
+
+QComboBox:focus,
+QDoubleSpinBox:focus,
+QDateEdit:focus {
+    border: 1px solid #4A5058;
+}
+
+QComboBox::drop-down,
+QDateEdit::drop-down {
+    border: none;
+    width: 32px;
+}
+
+QComboBox::down-arrow,
+QDateEdit::down-arrow {
+    image: url({icons}/chevron-down.svg);
+    width: 14px;
+    height: 14px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #1C2024;
+    border: 1px solid #2A2F35;
+    selection-background-color: #2A2F35;
+    color: #F1F3F5;
+}
+
+QDoubleSpinBox::up-button,
+QDoubleSpinBox::down-button {
+    width: 0px;
+    border: none;
+}
+
+QDoubleSpinBox::up-arrow,
+QDoubleSpinBox::down-arrow {
+    width: 0px;
+    height: 0px;
+}
+
+QCheckBox {
+    spacing: 10px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #4A5058;
+    border-radius: 5px;
+    background-color: #1C2024;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #8A929B;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #8FE0A8;
+    border: 1px solid #8FE0A8;
+    image: url({icons}/check.svg);
+}
+
+QToolButton#ratingStar {
+    background: transparent;
+    border: none;
+    padding: 2px;
+}
+
+QLabel#ratingValue {
+    color: #C2C8CF;
+    font-weight: 600;
 }

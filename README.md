@@ -42,6 +42,15 @@ pytest
 python -m mypy main.py tests
 ```
 
+### Catalogo IGDB
+
+L'app desktop cerca i giochi nel catalogo di [IGDB](https://www.igdb.com). Servono le credenziali di un'app registrata su [dev.twitch.tv](https://dev.twitch.tv/console):
+
+1. Copia `.env.example` come `.env`.
+2. Inserisci `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET`.
+
+Il file `.env` è escluso dal repository. Senza credenziali l'app usa un piccolo catalogo di prova.
+
 ## Regole della libreria
 
 ### Giochi e partite
@@ -74,7 +83,7 @@ Un gioco ha un titolo, un voto e zero o più partite. Piattaforma, stato, ore e 
 
 ### Voto
 
-- Facoltativo, da 1 a 10, con mezzi punti ammessi (es. `7.5`).
+- Facoltativo, un numero intero da 1 a 10.
 - Un valore non valido viene rifiutato, mai arrotondato.
 - È unico per il gioco, non per la singola partita.
 - Un gioco in backlog non può avere un voto.

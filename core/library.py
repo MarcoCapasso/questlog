@@ -100,8 +100,8 @@ def apply_status_change(playthrough: Playthrough, new_status: str, today: str) -
 
 
 def is_valid_rating(rating: float) -> bool:
-    """Indica se il voto è tra 1 e 10, intero o a mezzi punti."""
-    return 1 <= rating <= 10 and (rating * 2).is_integer()
+    """Indica se il voto è un numero intero da 1 a 10."""
+    return 1 <= rating <= 10 and float(rating).is_integer()
 
 
 def is_valid_date_order(start_date: str | None, completion_date: str | None) -> bool:
@@ -168,3 +168,26 @@ def validate_new_title(games: list[Game], title: str) -> str | None:
     if find_game_index_by_title(games, clean_title) is not None:
         return f"'{clean_title}' è già nella libreria."
     return None
+
+
+def known_platforms(games: list[Game]) -> list[str]:
+    """Restituisce le piattaforme già usate nelle partite, una volta sola e in ordine alfabetico."""
+    platforms = set()
+    for game in games:
+        for playthrough in game.playthroughs:
+            platforms.add(playthrough.platform)
+    return sorted(platforms, key=str.lower)
+
+
+def validate_new_playthrough(
+    status: str,
+    hours_played: float,
+    start_date: str | None,
+    completion_date: str | None,
+) -> str | None:
+    """Restituisce il messaggio d'errore per i dati di una nuova partita, oppure None se sono validi."""
+    if status == "completed" and hours_played == 0:
+        return "Una partita completata deve avere delle ore."
+    if not is_valid_date_order(start_date, completion_date):
+        return "La data di completamento non può precedere la data di inizio."
+    return None

@@ -11,9 +11,12 @@ from core.library import (
     has_completed_playthrough,
     is_backlog,
     is_valid_date_order,
+    is_valid_rating,
+    known_platforms,
     playthrough_statuses,
     remove_playthrough,
     summary_status,
+    validate_new_playthrough,
     validate_new_title,
 )
 from core.models import Game, Playthrough
@@ -228,3 +231,37 @@ def test_validate_new_title_rejects_existing_title_ignoring_case():
 
 def test_validate_new_title_accepts_new_title():
     assert validate_new_title([make_game("Hades")], "Celeste") is None
+
+
+def test_rating_must_be_a_whole_number_from_1_to_10():
+    assert is_valid_rating(1)
+    assert is_valid_rating(10)
+    assert not is_valid_rating(7.5)
+    assert not is_valid_rating(0)
+    assert not is_valid_rating(11)
+
+
+def test_known_platforms_lists_each_platform_once_in_alphabetical_order():
+    games = [
+        make_game("Hades", Playthrough("Switch", "completed", 10), Playthrough("PC", "dropped", 2)),
+        make_game("Celeste", Playthrough("PC", "completed", 8)),
+        make_game("GTA VI"),
+    ]
+
+    assert known_platforms(games) == ["PC", "Switch"]
+
+
+def test_validate_new_playthrough_requires_hours_when_completed():
+    error = validate_new_playthrough("completed", 0, "2026-01-01", "2026-01-02")
+
+    assert error == "Una partita completata deve avere delle ore."
+
+
+def test_validate_new_playthrough_rejects_completion_before_start():
+    error = validate_new_playthrough("completed", 10, "2026-02-01", "2026-01-01")
+
+    assert error == "La data di completamento non può precedere la data di inizio."
+
+
+def test_validate_new_playthrough_accepts_playing_with_zero_hours():
+    assert validate_new_playthrough("playing", 0, "2026-01-01", None) is None

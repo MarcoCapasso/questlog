@@ -128,7 +128,7 @@ def parse_rating(text: str) -> float | None:
         return None
     rating = parse_number(text)
     if not is_valid_rating(rating):
-        raise ValueError(f"voto '{text}' non valido (da 1 a 10, interi o mezzi punti).")
+        raise ValueError(f"voto '{text}' non valido (intero da 1 a 10).")
     return rating
 
 

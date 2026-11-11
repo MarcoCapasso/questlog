@@ -81,7 +81,7 @@ def test_import_rejects_future_date():
 def test_export_then_import_returns_same_library(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     games = [
-        Game("Zelda: Ocarina of Time; Master Quest", 9.5,
+        Game("Zelda: Ocarina of Time; Master Quest", 9,
              [Playthrough("Switch", "completed", 30, "2026-01-01", "2026-02-01")]),
         Game("Celeste"),
     ]

@@ -68,7 +68,7 @@ def ask_confirmation(prompt: str) -> bool:
 
 
 def ask_rating(prompt: str) -> float | None:
-    """Chiede un voto da 1 a 10 a mezzi punti; restituisce None se l'utente preme Invio."""
+    """Chiede un voto intero da 1 a 10; restituisce None se l'utente preme Invio."""
     while True:
         rating_text = input(prompt).strip()
         if rating_text == "":
@@ -77,7 +77,7 @@ def ask_rating(prompt: str) -> float | None:
             rating = float(rating_text)
             if is_valid_rating(rating):
                 return rating
-            print("Il voto deve essere tra 1 e 10, intero o a mezzi punti (es. 7.5).")
+            print("Il voto deve essere un numero intero da 1 a 10.")
         except ValueError:
             print("Inserisci un numero.")
 
