@@ -29,6 +29,7 @@ class HomePage(QWidget):
     game_selected = Signal(Game)
     update_requested = Signal(Game, int)
     library_requested = Signal()
+    add_requested = Signal()
 
     def __init__(self, repository: GameRepository, catalog: GameCatalog) -> None:
         super().__init__()
@@ -55,11 +56,15 @@ class HomePage(QWidget):
         self.library_button = QPushButton("Vai alla libreria")
         self.library_button.setObjectName("primaryButton")
         self.library_button.clicked.connect(self.library_requested.emit)
+        self.add_button = QPushButton("Aggiungi il primo gioco")
+        self.add_button.setObjectName("primaryButton")
+        self.add_button.clicked.connect(self.add_requested.emit)
         hero_actions = QHBoxLayout()
         hero_actions.setSpacing(10)
         hero_actions.addWidget(self.update_button)
         hero_actions.addWidget(self.open_button)
         hero_actions.addWidget(self.library_button)
+        hero_actions.addWidget(self.add_button)
         hero_actions.addStretch()
 
         hero_text = QVBoxLayout()
@@ -94,6 +99,13 @@ class HomePage(QWidget):
         self.recent_message = QLabel("Quando registri una partita con le date, la trovi qui.")
         self.recent_message.setObjectName("sectionMessage")
         self.recent_grid = CardGrid(max_rows=1)
+        self.recent_section = QWidget()
+        recent_layout = QVBoxLayout(self.recent_section)
+        recent_layout.setContentsMargins(0, 0, 0, 0)
+        recent_layout.setSpacing(28)
+        recent_layout.addLayout(recent_heading)
+        recent_layout.addWidget(self.recent_message)
+        recent_layout.addWidget(self.recent_grid)
 
         self.backdrop = BackdropWidget()
         content = QVBoxLayout(self.backdrop)
@@ -102,9 +114,7 @@ class HomePage(QWidget):
         content.addLayout(hero)
         content.addWidget(self.stats_label)
         content.addSpacing(8)
-        content.addLayout(recent_heading)
-        content.addWidget(self.recent_message)
-        content.addWidget(self.recent_grid)
+        content.addWidget(self.recent_section)
         content.addStretch()
 
         scroll_area = QScrollArea()
@@ -118,19 +128,29 @@ class HomePage(QWidget):
         """Rilegge la libreria e aggiorna tutta la pagina."""
         games = self.repository.load_games()
         self.current = current_playthrough(games)
-        self.show_current_game()
+        self.show_current_game(library_empty=not games)
+        self.recent_section.setVisible(bool(games))
         self.stats_label.setText(format_summary(summarize_library(games)))
         self.stats_label.setVisible(any(game.playthroughs for game in games))
         self.show_recent_games(recently_played(games, RECENT_LIMIT))
 
-    def show_current_game(self) -> None:
-        """Mostra in primo piano la partita in corso, oppure un invito a iniziarne una."""
+    def show_current_game(self, library_empty: bool) -> None:
+        """Mostra in primo piano la partita in corso, oppure un invito a iniziarne una (o ad aggiungere giochi)."""
         playing = self.current is not None
         self.eyebrow.setVisible(playing)
         self.update_button.setVisible(playing)
         self.open_button.setVisible(playing)
-        self.library_button.setVisible(not playing)
+        self.library_button.setVisible(not playing and not library_empty)
+        self.add_button.setVisible(library_empty)
         self.backdrop.set_url(None)
+        if library_empty:
+            self.replace_cover(None, visible=False)
+            self.hero_title.setText("Benvenuto su Questlog")
+            self.hero_details.setText(
+                "La tua libreria è ancora vuota. Cerca i giochi che stai giocando o che hai finito "
+                "e aggiungili: qui troverai la partita in corso e i giochi recenti."
+            )
+            return
         if self.current is None:
             self.replace_cover(None, visible=False)
             self.hero_title.setText("Nessun gioco in corso")

@@ -330,6 +330,12 @@ QPushButton#primaryButton:hover {
     background-color: #FFFFFF;
 }
 
+QPushButton#primaryButton:disabled {
+    background-color: #5A6068;
+    border: 1px solid #5A6068;
+    color: #2A2F35;
+}
+
 QPushButton#backButton {
     background-color: transparent;
     border: 1px solid transparent;
@@ -644,6 +650,10 @@ QPushButton#textButton:hover {
     color: #FFFFFF;
 }
 
+QPushButton#textButton:disabled {
+    color: #5A6068;
+}
+
 /* Statistiche (stile Wrapped) */
 
 QFrame#wrappedTile {
@@ -802,4 +812,59 @@ QFrame#importPreview {
 QLabel#previewText {
     font-size: 14px;
     font-weight: 600;
+}
+
+QLabel#statusMessage {
+    color: #C2C8CF;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Accedi / Registrati */
+
+QLabel#authTitle {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+QLabel#authMessage {
+    color: #C2C8CF;
+}
+
+QLabel#authMessage[error="true"] {
+    color: #FF9B9B;
+}
+
+QFrame#dividerLine {
+    background-color: #2A2F35;
+}
+
+/* Bottone di Google: colori e font fissati dalle regole di Google (tema scuro).
+   Lo sfondo resta sempre #131314, lo stesso del riquadro attorno alla "G". */
+
+QPushButton#googleButton {
+    background-color: #131314;
+    border: 1px solid #8E918F;
+    border-radius: 20px;
+    padding: 0px;
+}
+
+QPushButton#googleButton:hover {
+    border: 1px solid #C4C7C5;
+}
+
+QPushButton#googleButton:disabled {
+    border: 1px solid #44474A;
+}
+
+QLabel#googleButtonText {
+    color: #E3E3E3;
+    font-family: "Google Sans";
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+}
+
+QLabel#googleButtonText:disabled {
+    color: #8E918F;
 }

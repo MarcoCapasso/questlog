@@ -1,4 +1,4 @@
-"""Pagina Impostazioni: per ora mostra lo stato dei servizi collegati e dove sono salvati i dati."""
+"""Pagina Impostazioni: mostra lo stato dei servizi collegati e dove sono salvati i dati."""
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QVBoxLayout, QWidget
@@ -10,9 +10,9 @@ PANEL_WIDTH = 680
 
 
 class SettingsPage(QWidget):
-    """Impostazioni di Questlog; crescerà con l'account online della Fase 6."""
+    """Impostazioni di Questlog: account, catalogo, traduzioni e posizione dei dati."""
 
-    def __init__(self, catalog_is_demo: bool, translation_enabled: bool) -> None:
+    def __init__(self, catalog_is_demo: bool, translation_enabled: bool, cloud_enabled: bool) -> None:
         super().__init__()
         heading = QLabel("Impostazioni")
         heading.setObjectName("pageTitle")
@@ -28,15 +28,23 @@ class SettingsPage(QWidget):
             if translation_enabled
             else "Non attive: le descrizioni restano in inglese. Aggiungi DEEPL_API_KEY nel file .env per tradurle."
         )
+        account_text = (
+            "Accedi con Google o con email e password: la libreria è salvata online nel tuo account, "
+            "e la ritrovi su ogni computer."
+            if cloud_enabled
+            else "Account non configurato: aggiungi SUPABASE_URL e SUPABASE_ANON_KEY nel file .env per salvare "
+            "la libreria online."
+        )
+        data_text = (
+            "La libreria è salvata nel database Supabase del tuo account: ogni utente vede solo i propri giochi."
+            if cloud_enabled
+            else f"La libreria è salvata in {LIBRARY_FILE.resolve()}"
+        )
         sections = [
-            (
-                "Account",
-                "Per ora Questlog salva tutto su questo computer. Con l'accesso tramite Google, "
-                "in arrivo, la libreria sarà online e sincronizzata.",
-            ),
+            ("Account", account_text),
             ("Catalogo IGDB", catalog_text),
             ("Traduzioni", translation_text),
-            ("Dove sono i tuoi dati", f"La libreria è salvata in {LIBRARY_FILE.resolve()}"),
+            ("Dove sono i tuoi dati", data_text),
         ]
 
         content = QWidget()
