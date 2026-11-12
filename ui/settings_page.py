@@ -18,10 +18,9 @@ class SettingsPage(QWidget):
         heading.setObjectName("pageTitle")
 
         catalog_text = (
-            "Catalogo di prova: aggiungi IGDB_CLIENT_ID e IGDB_CLIENT_SECRET nel file .env "
-            "per cercare tutti i giochi."
+            "Catalogo di prova: configura Supabase nel file .env per cercare tutti i giochi di IGDB."
             if catalog_is_demo
-            else "Collegato: ricerca, copertine e screenshot arrivano da IGDB."
+            else "Collegato: ricerca, copertine e screenshot arrivano da IGDB, tramite il server di Questlog."
         )
         translation_text = (
             "Attive con DeepL: le descrizioni dei giochi sono in italiano."

@@ -1,8 +1,8 @@
 import pytest
-import requests
+from supabase_functions.errors import FunctionsHttpError
 
 from core.catalog import CatalogGame
-from core.igdb import TOKEN_URL, IgdbCatalog, IgdbError, build_search_query, parse_game
+from core.igdb import IgdbCatalog, IgdbError, parse_game
 
 
 def test_parse_game_reads_igdb_fields():
@@ -35,47 +35,54 @@ def test_parse_game_without_optional_fields():
     assert game == CatalogGame(1, "Gioco misterioso")
 
 
-def test_search_query_removes_quotes():
-    query = build_search_query('  il "gioco" ')
+class FakeFunctions:
+    """Imita client.functions: ricorda le richieste e risponde come la Edge Function."""
 
-    assert query.startswith('search "il gioco";')
+    def __init__(self, response=None, error=None):
+        self.response = response
+        self.error = error
+        self.requests = []
 
-
-class FakeResponse:
-    def __init__(self, data, status_code=200):
-        self.data = data
-        self.status_code = status_code
-        self.ok = status_code < 400
-
-    def json(self):
-        return self.data
-
-
-def test_trending_keeps_popularity_order_and_reuses_token(monkeypatch):
-    calls = []
-
-    def fake_post(url, **kwargs):
-        calls.append(url)
-        if url == TOKEN_URL:
-            return FakeResponse({"access_token": "abc", "expires_in": 3600})
-        if url.endswith("/popularity_primitives"):
-            return FakeResponse([{"game_id": 2, "value": 0.9}, {"game_id": 1, "value": 0.5}])
-        return FakeResponse([{"id": 1, "name": "Primo"}, {"id": 2, "name": "Secondo"}])
-
-    monkeypatch.setattr(requests, "post", fake_post)
-    catalog = IgdbCatalog("id", "secret")
-
-    games = catalog.trending()
-
-    assert [game.title for game in games] == ["Secondo", "Primo"]
-    assert calls.count(TOKEN_URL) == 1
+    def invoke(self, name, invoke_options):
+        self.requests.append((name, invoke_options["body"]))
+        if self.error is not None:
+            raise self.error
+        return self.response
 
 
-def test_wrong_credentials_raise_igdb_error(monkeypatch):
-    monkeypatch.setattr(requests, "post", lambda url, **kwargs: FakeResponse({}, status_code=400))
+class FakeClient:
+    def __init__(self, functions):
+        self.functions = functions
 
-    with pytest.raises(IgdbError):
-        IgdbCatalog("id", "sbagliato").search("zelda")
+
+def test_search_sends_the_action_to_the_edge_function():
+    functions = FakeFunctions({"games": [{"id": 1, "name": "Zelda"}]})
+
+    games = IgdbCatalog(FakeClient(functions)).search("zelda")  # type: ignore[arg-type]
+
+    assert functions.requests == [("igdb", {"action": "search", "text": "zelda"})]
+    assert [game.title for game in games] == ["Zelda"]
+
+
+def test_details_returns_none_when_igdb_has_no_game():
+    functions = FakeFunctions({"games": []})
+
+    assert IgdbCatalog(FakeClient(functions)).details(999) is None  # type: ignore[arg-type]
+    assert functions.requests == [("igdb", {"action": "details", "id": 999})]
+
+
+def test_unauthorized_becomes_a_login_message():
+    functions = FakeFunctions(error=FunctionsHttpError("No credentials", 401))
+
+    with pytest.raises(IgdbError, match="serve il login"):
+        IgdbCatalog(FakeClient(functions)).trending()  # type: ignore[arg-type]
+
+
+def test_function_errors_keep_the_server_message():
+    functions = FakeFunctions(error=FunctionsHttpError("IGDB ha risposto con un errore (500).", 502))
+
+    with pytest.raises(IgdbError, match="IGDB ha risposto con un errore"):
+        IgdbCatalog(FakeClient(functions)).upcoming()  # type: ignore[arg-type]
 
 
 def test_parse_game_uses_artwork_as_backdrop_and_lists_screenshots():

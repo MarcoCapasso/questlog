@@ -149,7 +149,7 @@ class CatalogPage(QWidget):
         self.search_box.returnPressed.connect(self.run_search)
 
         demo_notice = QLabel(
-            "Catalogo di prova: IGDB non è ancora configurato, quindi vedi solo alcuni giochi di esempio."
+            "Catalogo di prova: Supabase non è configurato, quindi vedi solo alcuni giochi di esempio."
         )
         demo_notice.setObjectName("demoNotice")
         demo_notice.setWordWrap(True)

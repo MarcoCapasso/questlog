@@ -31,8 +31,9 @@
 
 ## Scarica
 
-Questlog sarà disponibile come programma per Windows: si scarica il file `.exe` dalla pagina [Releases](https://github.com/MarcoCapasso/questlog/releases), si apre e si entra con il proprio account.
+Questlog sarà disponibile come programma per Windows: si scarica il file `.exe` dalla pagina [Releases](https://github.com/MarcoCapasso/questlog/releases), si apre e si entra con il proprio account. Nessuna installazione di Python.
 
+Vuoi far girare il codice o contribuire? Trovi tutto nella [documentazione tecnica](docs/sviluppo.md).
 
 ## Costruito con
 
@@ -44,7 +45,7 @@ Python · PySide6 (Qt) · Supabase · API di IGDB · pandas e matplotlib · pyte
 - [x] Statistiche e grafici
 - [x] App desktop con catalogo IGDB
 - [x] Account e libreria online
-- [ ] Catalogo IGDB senza chiavi nell'app
+- [x] Catalogo IGDB senza chiavi nell'app
 - [ ] Programma `.exe` da scaricare
 
 ## Licenza

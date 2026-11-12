@@ -15,15 +15,6 @@ def read_setting(name: str) -> str | None:
     return value if value != "" else None
 
 
-def load_igdb_credentials() -> tuple[str, str] | None:
-    """Restituisce Client ID e Client Secret di IGDB, oppure None se non sono configurati."""
-    client_id = read_setting("IGDB_CLIENT_ID")
-    client_secret = read_setting("IGDB_CLIENT_SECRET")
-    if client_id is None or client_secret is None:
-        return None
-    return client_id, client_secret
-
-
 def load_supabase_settings() -> tuple[str, str] | None:
     """Restituisce URL del progetto e chiave pubblica di Supabase, oppure None se non sono configurati."""
     url = read_setting("SUPABASE_URL")
