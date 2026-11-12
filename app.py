@@ -7,10 +7,12 @@ from PySide6.QtWidgets import QApplication
 
 from core.catalog import FakeCatalog, GameCatalog
 from core.cloud import AuthService, create_supabase_client
+from core.cloud_repository import SupabaseGameRepository
 from core.config import load_deepl_api_key, load_igdb_credentials, load_supabase_settings
 from core.igdb import IgdbCatalog
-from core.repository import JsonGameRepository
+from core.repository import GameRepository, JsonGameRepository
 from core.translation import DeepLTranslator, NoTranslator, Translator
+from ui.cloud_library import CloudAccount, CloudLibrary
 from ui.main_window import MainWindow
 from ui.theme import load_fonts, load_stylesheet
 
@@ -32,13 +34,17 @@ def create_translator() -> Translator:
     return DeepLTranslator(api_key)
 
 
-def create_auth() -> AuthService | None:
-    """Restituisce il servizio di login se Supabase è configurato nel file .env, altrimenti None."""
+def create_account() -> CloudAccount | None:
+    """Restituisce login e libreria online se Supabase è configurato nel file .env, altrimenti None.
+
+    Login e libreria usano lo stesso client: dopo il login, le richieste al database partono già come quell'utente.
+    """
     settings = load_supabase_settings()
     if settings is None:
         return None
     url, key = settings
-    return AuthService(create_supabase_client(url, key))
+    client = create_supabase_client(url, key)
+    return CloudAccount(AuthService(client), CloudLibrary(SupabaseGameRepository(client)))
 
 
 def main() -> None:
@@ -48,7 +54,9 @@ def main() -> None:
     app.setStyle("Fusion")
     load_fonts()
     app.setStyleSheet(load_stylesheet())
-    window = MainWindow(JsonGameRepository(), create_catalog(), create_translator(), create_auth())
+    account = create_account()
+    repository: GameRepository = account.library if account is not None else JsonGameRepository()
+    window = MainWindow(repository, create_catalog(), create_translator(), account)
     window.show()
     sys.exit(app.exec())
 

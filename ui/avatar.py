@@ -38,7 +38,7 @@ class AvatarButton(QToolButton):
         self.login_action = self.profile_menu.addAction("Accedi o registrati", self.login_requested.emit)
         self.account_separator = self.profile_menu.addSeparator()
         self.profile_menu.addAction("Impostazioni", self.settings_requested.emit)
-        self.profile_menu.addAction("Importa ed esporta", self.data_requested.emit)
+        self.data_action = self.profile_menu.addAction("Importa ed esporta", self.data_requested.emit)
         self.logout_separator = self.profile_menu.addSeparator()
         self.logout_action = self.profile_menu.addAction("Esci", self.logout_requested.emit)
         self.set_user(None)
@@ -50,7 +50,10 @@ class AvatarButton(QToolButton):
         self.set_user(None)
 
     def set_user(self, user: CloudUser | None) -> None:
-        """Aggiorna il menu: nome ed "Esci" con un utente, "Accedi o registrati" senza."""
+        """Aggiorna il menu: nome ed "Esci" con un utente, "Accedi o registrati" senza.
+
+        Senza login non c'è una libreria, quindi sparisce anche "Importa ed esporta" (se l'account è previsto).
+        """
         logged_in = user is not None
         self.account_action.setText(f"{user.name} · {user.email}" if user is not None else "")
         self.account_action.setVisible(logged_in)
@@ -58,6 +61,7 @@ class AvatarButton(QToolButton):
         self.account_separator.setVisible(logged_in or self.login_available)
         self.logout_separator.setVisible(logged_in)
         self.logout_action.setVisible(logged_in)
+        self.data_action.setVisible(logged_in or not self.login_available)
         self.setToolTip(user.name if user is not None else "Profilo")
 
     def show_menu(self) -> None:

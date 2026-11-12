@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -104,11 +105,20 @@ class AuthPage(QWidget):
         row.addStretch()
         row.addWidget(panel)
         row.addStretch()
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(40, 28, 40, 40)
+        content_layout.addStretch(1)
+        content_layout.addLayout(row)
+        content_layout.addStretch(2)
+
+        # Con la finestra bassa il modulo non si schiaccia: compare la barra di scorrimento.
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(content)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(40, 28, 40, 40)
-        layout.addStretch(1)
-        layout.addLayout(row)
-        layout.addStretch(2)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(scroll_area)
         self.start()
 
     def start(self) -> None:
