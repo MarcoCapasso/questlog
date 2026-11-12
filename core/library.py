@@ -76,6 +76,11 @@ def calculate_total_hours(game: Game) -> float:
     return total_hours
 
 
+def replace_playthrough(game: Game, playthrough_index: int, playthrough: Playthrough) -> None:
+    """Sostituisce una partita con la sua versione modificata, nella stessa posizione."""
+    game.playthroughs[playthrough_index] = playthrough
+
+
 def remove_playthrough(game: Game, playthrough_index: int) -> None:
     """Elimina una partita; se era l'ultima, il gioco torna in backlog e perde il voto."""
     game.playthroughs.pop(playthrough_index)

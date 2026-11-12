@@ -16,6 +16,7 @@ from core.library import (
     known_platforms,
     playthrough_statuses,
     remove_playthrough,
+    replace_playthrough,
     summary_status,
     validate_new_playthrough,
     validate_new_title,
@@ -98,6 +99,16 @@ def test_total_hours_is_zero_for_backlog_game():
 def test_has_completed_playthrough():
     assert has_completed_playthrough(make_game("Hades", make_playthrough("dropped"), make_playthrough("completed")))
     assert not has_completed_playthrough(make_game("Hades", make_playthrough("dropped")))
+
+
+def test_replace_playthrough_keeps_position():
+    first = Playthrough("PS4", "completed", 100)
+    second = Playthrough("PS5", "playing", 5)
+    game = Game("GTA V", playthroughs=[first, second])
+
+    replace_playthrough(game, 0, Playthrough("PS4", "completed", 120))
+
+    assert game.playthroughs == [Playthrough("PS4", "completed", 120), second]
 
 
 def test_remove_playthrough_keeps_rating_when_others_remain():

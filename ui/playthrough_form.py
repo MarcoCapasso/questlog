@@ -39,8 +39,8 @@ class PlaythroughForm(QFrame):
         super().__init__()
         self.setObjectName("formPanel")
 
-        title = QLabel("Nuova partita")
-        title.setObjectName("formTitle")
+        self.title_label = QLabel()
+        self.title_label.setObjectName("formTitle")
         close_button = QToolButton()
         close_button.setObjectName("closeButton")
         close_button.setText("✕")
@@ -48,7 +48,7 @@ class PlaythroughForm(QFrame):
         close_button.setCursor(Qt.CursorShape.PointingHandCursor)
         close_button.clicked.connect(self.cancelled.emit)
         title_row = QHBoxLayout()
-        title_row.addWidget(title)
+        title_row.addWidget(self.title_label)
         title_row.addStretch()
         title_row.addWidget(close_button)
 
@@ -60,7 +60,7 @@ class PlaythroughForm(QFrame):
         self.platform_input.setPlaceholderText("Es. PC, PS5, Nintendo Switch")
         self.platform_input.setFixedWidth(PLATFORM_INPUT_WIDTH)
         platform_layout = QVBoxLayout()
-        platform_layout.setSpacing(0)
+        platform_layout.setSpacing(8)
         platform_layout.addWidget(platform_pills_container)
         platform_layout.addWidget(self.platform_input)
 
@@ -100,13 +100,13 @@ class PlaythroughForm(QFrame):
 
         cancel_button = QPushButton("Annulla")
         cancel_button.clicked.connect(self.cancelled.emit)
-        save_button = QPushButton("Salva partita")
-        save_button.setObjectName("primaryButton")
-        save_button.clicked.connect(self.submit)
+        self.save_button = QPushButton()
+        self.save_button.setObjectName("primaryButton")
+        self.save_button.clicked.connect(self.submit)
         actions = QHBoxLayout()
         actions.addStretch()
         actions.addWidget(cancel_button)
-        actions.addWidget(save_button)
+        actions.addWidget(self.save_button)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 24)
@@ -124,12 +124,21 @@ class PlaythroughForm(QFrame):
         layout.addSpacing(6)
         layout.addLayout(actions)
 
-    def start(self, game_platforms: list[str], known_platforms: list[str]) -> None:
-        """Svuota il pannello e prepara la scelta della piattaforma.
+    def start(
+        self,
+        game_platforms: list[str],
+        known_platforms: list[str],
+        playthrough: Playthrough | None = None,
+    ) -> None:
+        """Prepara il pannello: vuoto per una nuova partita, già compilato se riceve la partita da modificare.
 
         Se IGDB indica le piattaforme del gioco, si sceglie solo tra quelle (già selezionata se è una sola).
         Altrimenti si scrive la piattaforma, con i suggerimenti presi da quelle già usate in libreria.
         """
+        editing = playthrough is not None
+        self.title_label.setText("Modifica partita" if editing else "Nuova partita")
+        self.save_button.setText("Salva modifiche" if editing else "Salva partita")
+
         self.create_platform_buttons(game_platforms)
         if len(game_platforms) == 1:
             self.platform_buttons.buttons()[0].setChecked(True)
@@ -146,7 +155,33 @@ class PlaythroughForm(QFrame):
             date_input.setMaximumDate(today)
             date_input.setDate(today)
         self.error_label.hide()
+        if playthrough is not None:
+            self.fill(playthrough)
         self.update_visible_fields()
+
+    def fill(self, playthrough: Playthrough) -> None:
+        """Riempie i campi con i dati della partita da modificare."""
+        self.select_platform(playthrough.platform)
+        statuses = [status for status, _ in STATUS_CHOICES]
+        self.status_buttons.button(statuses.index(playthrough.status)).setChecked(True)
+        self.hours_input.set_value(playthrough.hours_played)
+        if playthrough.start_date is not None:
+            self.start_date_input.setDate(QDate.fromString(playthrough.start_date, ISO_FORMAT))
+        if playthrough.completion_date is not None:
+            self.completion_date_input.setDate(QDate.fromString(playthrough.completion_date, ISO_FORMAT))
+
+    def select_platform(self, platform: str) -> None:
+        """Seleziona la pillola con quel nome; se non c'è (per esempio "PS4" scritto a mano), la mette nel campo."""
+        for button in self.platform_buttons.buttons():
+            if button.text().lower() == platform.lower():
+                button.setChecked(True)
+                return
+        self.platform_buttons.setExclusive(False)
+        for button in self.platform_buttons.buttons():
+            button.setChecked(False)
+        self.platform_buttons.setExclusive(True)
+        self.platform_input.setText(platform)
+        self.platform_input.show()
 
     def create_platform_buttons(self, platforms: list[str]) -> None:
         """Sostituisce le pillole delle piattaforme con quelle indicate; nessuna è selezionata."""

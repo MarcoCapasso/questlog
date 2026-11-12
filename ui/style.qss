@@ -189,6 +189,18 @@ QFrame#playthroughRow {
     border-radius: 12px;
 }
 
+QToolButton#rowAction {
+    background: transparent;
+    border: none;
+    border-radius: 18px;
+    min-width: 36px;
+    min-height: 36px;
+}
+
+QToolButton#rowAction:hover {
+    background-color: #2A2F35;
+}
+
 QLabel#playthroughHours {
     font-size: 22px;
     font-weight: 800;

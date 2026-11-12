@@ -1,8 +1,17 @@
 """Pagina di un gioco: dati dal catalogo IGDB, aggiunta alla libreria, voto e partite."""
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtGui import QIcon, QKeyEvent
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.catalog import CatalogGame, GameCatalog, find_library_game, game_from_catalog, link_to_catalog
 from core.library import (
@@ -11,6 +20,7 @@ from core.library import (
     find_platform_spelling,
     is_backlog,
     known_platforms,
+    replace_playthrough,
 )
 from core.models import Game, Playthrough
 from core.repository import GameRepository
@@ -21,6 +31,7 @@ from ui.covers import CoverLabel
 from ui.game_card import PLAYTHROUGH_STATUS_LABELS, format_release_year
 from ui.playthrough_form import PlaythroughForm
 from ui.tasks import run_in_background
+from ui.theme import ICONS_DIR
 from ui.widgets import RatingInput
 
 PAGE_MARGIN = 40
@@ -107,18 +118,16 @@ class GamePage(QWidget):
         self.total_hours_label.setObjectName("gameMeta")
 
         self.new_playthrough_button = QPushButton("Nuova partita")
-        self.new_playthrough_button.clicked.connect(self.open_playthrough_form)
+        self.new_playthrough_button.clicked.connect(lambda: self.open_playthrough_form(None))
         playthroughs_heading = QHBoxLayout()
         playthroughs_heading.addWidget(create_section_title("Partite"))
         playthroughs_heading.addStretch()
         playthroughs_heading.addWidget(self.new_playthrough_button)
 
-        self.playthrough_form = PlaythroughForm()
-        self.playthrough_form.setMaximumWidth(SUMMARY_WIDTH)
-        self.playthrough_form.submitted.connect(self.add_playthrough)
-        self.playthrough_form.cancelled.connect(self.playthrough_form.hide)
         self.playthrough_list = QVBoxLayout()
         self.playthrough_list.setSpacing(10)
+        self.playthrough_rows: list[PlaythroughRow] = []
+        self.editing_index: int | None = None
 
         self.library_section = QWidget()
         self.library_section.setMaximumWidth(SUMMARY_WIDTH)
@@ -127,8 +136,13 @@ class GamePage(QWidget):
         library_layout.setSpacing(14)
         library_layout.addLayout(playthroughs_heading)
         library_layout.addWidget(self.total_hours_label)
-        library_layout.addWidget(self.playthrough_form)
         library_layout.addLayout(self.playthrough_list)
+
+        self.playthrough_form = PlaythroughForm()
+        self.playthrough_form.setParent(self.library_section)
+        self.playthrough_form.hide()
+        self.playthrough_form.submitted.connect(self.save_playthrough)
+        self.playthrough_form.cancelled.connect(self.close_playthrough_form)
 
         self.backdrop = BackdropWidget()
         content_layout = QVBoxLayout(self.backdrop)
@@ -173,7 +187,7 @@ class GamePage(QWidget):
     def start_view(self) -> None:
         """Riparte dall'alto della pagina, senza sfondo e immagini finché non arrivano i dettagli."""
         self.details_loaded = False
-        self.playthrough_form.hide()
+        self.close_playthrough_form()
         self.backdrop.set_url(None)
         self.carousel.set_images([])
         self.screenshots_section.hide()
@@ -253,18 +267,27 @@ class GamePage(QWidget):
         self.cover_holder.addWidget(CoverLabel(cover_url, COVER_SIZE))
 
     def render_playthroughs(self, game: Game) -> None:
-        """Ricrea l'elenco delle partite, dalla più recente, con il totale delle ore."""
+        """Ricrea l'elenco delle partite, dalla più recente, con il totale delle ore.
+
+        Il pannello del form non viene distrutto: viene chiuso, esce dall'elenco e ci rientra quando serve.
+        """
+        self.close_playthrough_form()
         while self.playthrough_list.count():
             item = self.playthrough_list.takeAt(0)
-            old_row = item.widget() if item is not None else None
-            if old_row is not None:
-                old_row.deleteLater()
+            old_widget = item.widget() if item is not None else None
+            if old_widget is not None and old_widget is not self.playthrough_form:
+                old_widget.hide()
+                old_widget.deleteLater()
+        self.playthrough_rows = []
         if not game.playthroughs:
             self.total_hours_label.setText("Non l'hai ancora iniziato.")
             return
         self.total_hours_label.setText(f"{calculate_total_hours(game):g} ore in totale")
-        for playthrough in reversed(game.playthroughs):
-            self.playthrough_list.addWidget(PlaythroughRow(playthrough))
+        for index in reversed(range(len(game.playthroughs))):
+            row = PlaythroughRow(game.playthroughs[index])
+            row.edit_requested.connect(lambda chosen=index: self.open_playthrough_form(chosen))
+            self.playthrough_list.addWidget(row)
+            self.playthrough_rows.append(row)
 
     def add_to_library(self) -> None:
         """Aggiunge alla libreria il gioco del catalogo mostrato, come gioco da giocare."""
@@ -282,23 +305,45 @@ class GamePage(QWidget):
         self.game.rating = rating
         self.save()
 
-    def open_playthrough_form(self) -> None:
-        """Apre il form della nuova partita con le piattaforme del gioco secondo IGDB, se le conosciamo."""
+    def open_playthrough_form(self, playthrough_index: int | None) -> None:
+        """Apre il pannello: in cima all'elenco per una nuova partita, al posto della riga per modificarne una."""
+        if self.game is None:
+            return
+        self.close_playthrough_form()
+        self.editing_index = playthrough_index
         game_platforms = list(self.catalog_game.platforms) if self.catalog_game is not None else []
         self.platform_suggestions = game_platforms
-        self.playthrough_form.start(game_platforms, known_platforms(self.games))
+        playthrough = None if playthrough_index is None else self.game.playthroughs[playthrough_index]
+        self.playthrough_form.start(game_platforms, known_platforms(self.games), playthrough)
+
+        position = 0
+        if playthrough_index is not None:
+            position = len(self.game.playthroughs) - 1 - playthrough_index
+            self.playthrough_rows[position].hide()
+        self.playthrough_list.insertWidget(position, self.playthrough_form)
         self.playthrough_form.show()
 
-    def add_playthrough(self, playthrough: Playthrough) -> None:
-        """Aggiunge la partita al gioco, usando la grafia già presente tra i suggerimenti o in libreria."""
+    def close_playthrough_form(self) -> None:
+        """Chiude il pannello e rimette al suo posto la riga che si stava modificando."""
+        self.playthrough_form.hide()
+        self.playthrough_list.removeWidget(self.playthrough_form)
+        self.editing_index = None
+        for row in self.playthrough_rows:
+            row.show()
+
+    def save_playthrough(self, playthrough: Playthrough) -> None:
+        """Aggiunge la nuova partita o sostituisce quella modificata, con la grafia già nota della piattaforma."""
         if self.game is None:
             return
         playthrough.platform = find_platform_spelling(self.games, playthrough.platform)
         for suggestion in self.platform_suggestions:
             if suggestion.lower() == playthrough.platform.lower():
                 playthrough.platform = suggestion
-        self.game.playthroughs.append(playthrough)
-        self.playthrough_form.hide()
+        if self.editing_index is None:
+            self.game.playthroughs.append(playthrough)
+        else:
+            replace_playthrough(self.game, self.editing_index, playthrough)
+        self.close_playthrough_form()
         self.save()
         self.update_view()
 
@@ -311,7 +356,7 @@ class GamePage(QWidget):
         """Con Esc chiude il form della partita, oppure torna indietro."""
         if event.key() == Qt.Key.Key_Escape:
             if self.playthrough_form.isVisible():
-                self.playthrough_form.hide()
+                self.close_playthrough_form()
             else:
                 self.back_requested.emit()
             return
@@ -319,7 +364,9 @@ class GamePage(QWidget):
 
 
 class PlaythroughRow(QFrame):
-    """Una riga dell'elenco partite: piattaforma e stato, date, ore."""
+    """Una riga dell'elenco partite: piattaforma e stato, date, ore e il bottone per modificarla."""
+
+    edit_requested = Signal()
 
     def __init__(self, playthrough: Playthrough) -> None:
         super().__init__()
@@ -338,10 +385,20 @@ class PlaythroughRow(QFrame):
         text.addWidget(title)
         text.addWidget(dates)
 
+        edit_button = QToolButton()
+        edit_button.setObjectName("rowAction")
+        edit_button.setIcon(QIcon(str(ICONS_DIR / "pencil.svg")))
+        edit_button.setIconSize(QSize(18, 18))
+        edit_button.setToolTip("Modifica partita")
+        edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        edit_button.clicked.connect(self.edit_requested.emit)
+
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setContentsMargins(20, 16, 12, 16)
+        layout.setSpacing(16)
         layout.addLayout(text, stretch=1)
         layout.addWidget(hours)
+        layout.addWidget(edit_button)
 
 
 def create_section_title(text: str) -> QLabel:
