@@ -20,9 +20,11 @@ from ui.catalog_page import CatalogPage
 from ui.game_page import GamePage
 from ui.home_page import HomePage
 from ui.library_page import LibraryPage
+from ui.statistics_page import StatisticsPage
 
 HOME_NAV_INDEX = 0
 LIBRARY_NAV_INDEX = 1
+STATISTICS_NAV_INDEX = 2
 
 
 class MainWindow(QMainWindow):
@@ -37,6 +39,7 @@ class MainWindow(QMainWindow):
 
         self.home_page = HomePage(repository, catalog)
         self.library_page = LibraryPage(repository)
+        self.statistics_page = StatisticsPage(repository)
         self.catalog_page = CatalogPage(catalog, repository)
         self.game_page = GamePage(repository, catalog, translator)
         self.page_before_game: QWidget = self.library_page
@@ -68,7 +71,7 @@ class MainWindow(QMainWindow):
         pages = [
             ("Home", self.home_page),
             ("Libreria", self.library_page),
-            ("Statistiche", create_placeholder_page("Statistiche")),
+            ("Statistiche", self.statistics_page),
         ]
         for index, (name, page) in enumerate(pages):
             button = QPushButton(name)
@@ -81,7 +84,7 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.catalog_page)
         self.pages.addWidget(self.game_page)
 
-        self.nav_buttons.idClicked.connect(self.pages.setCurrentIndex)
+        self.nav_buttons.idClicked.connect(self.show_nav_page)
         self.nav_buttons.button(HOME_NAV_INDEX).setChecked(True)
         self.home_page.refresh()
 
@@ -103,6 +106,14 @@ class MainWindow(QMainWindow):
         section = self.page_before_game if page is self.game_page else page
         nav_index = HOME_NAV_INDEX if section is self.home_page else LIBRARY_NAV_INDEX
         self.nav_buttons.button(nav_index).setChecked(True)
+
+    def show_nav_page(self, nav_index: int) -> None:
+        """Mostra la pagina del bottone cliccato in alto; Home e Statistiche si aggiornano prima di comparire."""
+        if nav_index == HOME_NAV_INDEX:
+            self.home_page.refresh()
+        elif nav_index == STATISTICS_NAV_INDEX:
+            self.statistics_page.refresh()
+        self.pages.setCurrentIndex(nav_index)
 
     def show_library_page(self) -> None:
         """Torna alla libreria."""
@@ -156,13 +167,3 @@ class MainWindow(QMainWindow):
         if self.page_before_game is self.catalog_page:
             self.catalog_page.refresh_cards()
         self.show_page(self.page_before_game)
-
-
-def create_placeholder_page(title: str) -> QWidget:
-    """Restituisce una pagina provvisoria che mostra solo il proprio titolo."""
-    page = QWidget()
-    layout = QVBoxLayout(page)
-    layout.setContentsMargins(40, 28, 40, 28)
-    layout.addWidget(QLabel(title))
-    layout.addStretch()
-    return page

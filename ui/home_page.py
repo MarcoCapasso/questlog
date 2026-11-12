@@ -4,7 +4,7 @@ from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
-from core.analysis import LibrarySummary, summarize_library
+from core.analysis import summarize_library
 from core.catalog import CatalogGame, GameCatalog
 from core.library import current_playthrough, recently_played
 from core.models import Game
@@ -12,6 +12,7 @@ from core.repository import GameRepository
 from ui.backdrop import BackdropWidget
 from ui.card_grid import CardGrid, count_columns
 from ui.covers import CoverLabel
+from ui.formatting import format_summary
 from ui.game_card import ClickableCard, GameCard
 from ui.game_page import format_date
 from ui.tasks import run_in_background
@@ -193,34 +194,3 @@ class HomePage(QWidget):
         """Adatta il numero di card dei giochi recenti alla larghezza."""
         super().resizeEvent(event)
         self.recent_grid.set_columns(count_columns(self.width() - 2 * PAGE_MARGIN - SCROLLBAR_SPACE))
-
-
-def format_summary(summary: LibrarySummary) -> str:
-    """Restituisce la riga dei numeri della libreria, con i valori in grassetto (testo HTML)."""
-    parts = [
-        f"{bold(format_number(summary.total_hours))} ore giocate",
-        f"{bold(str(summary.completed_playthroughs))} partite completate",
-    ]
-    if summary.completion_rate is not None:
-        parts.append(f"{bold(f'{summary.completion_rate:.0%}')} portate a termine")
-    if summary.average_rating is not None:
-        parts.append(f"voto medio {bold(format_number(summary.average_rating, decimals=1))} ★")
-    if summary.median_days_to_complete is not None:
-        parts.append(f"un gioco ti dura in media {bold(format_number(summary.median_days_to_complete))} giorni")
-    return " &nbsp;·&nbsp; ".join(parts)
-
-
-def bold(text: str) -> str:
-    """Restituisce il testo in grassetto e in chiaro, come HTML."""
-    return f'<b style="color:#F1F3F5">{text}</b>'
-
-
-def format_number(value: float, decimals: int = 0) -> str:
-    """Formatta un numero all'italiana: punto per le migliaia, virgola per i decimali (2.473 · 4,5).
-
-    Un numero intero non mostra decimali anche se richiesti (4 e non 4,0).
-    """
-    if float(value).is_integer():
-        decimals = 0
-    text = f"{value:,.{decimals}f}"
-    return text.replace(",", "_").replace(".", ",").replace("_", ".")

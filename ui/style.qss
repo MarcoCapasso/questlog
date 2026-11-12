@@ -643,3 +643,129 @@ QPushButton#textButton {
 QPushButton#textButton:hover {
     color: #FFFFFF;
 }
+
+/* Statistiche (stile Wrapped) */
+
+QFrame#wrappedTile {
+    border-radius: 22px;
+}
+
+QFrame#wrappedTile[tone="mint"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #9BF0B4, stop: 1 #2FB59A);
+}
+
+QFrame#wrappedTile[tone="coral"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #FFC08F, stop: 1 #F0567A);
+}
+
+QFrame#wrappedTile[tone="navy"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #1E2A4A, stop: 1 #121A30);
+}
+
+QFrame#wrappedTile[tone="sky"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #A7D3FA, stop: 1 #4C86D9);
+}
+
+QFrame#wrappedTile[tone="gold"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #FBE08A, stop: 1 #E59A2F);
+}
+
+QFrame#wrappedTile[tone="violet"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #8E6CF0, stop: 1 #3F2F8F);
+}
+
+QFrame#wrappedTile[tone="ink"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1, stop: 0 #23353B, stop: 1 #0F1B1F);
+}
+
+QFrame#wrappedTile[tone="magenta"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #F0567A, stop: 0.55 #9A4FD8, stop: 1 #4C86D9);
+}
+
+QFrame#wrappedTile QLabel {
+    color: #FFFFFF;
+    background: transparent;
+}
+
+QFrame#wrappedTile[tone="mint"] QLabel {
+    color: #0B2A1A;
+}
+
+QFrame#wrappedTile[tone="coral"] QLabel {
+    color: #2E0B16;
+}
+
+QFrame#wrappedTile[tone="sky"] QLabel {
+    color: #0B1A2E;
+}
+
+QFrame#wrappedTile[tone="gold"] QLabel {
+    color: #2A1A04;
+}
+
+QFrame#wrappedTile QLabel#cover {
+    background-color: rgba(0, 0, 0, 40);
+    border-radius: 8px;
+}
+
+QLabel#wrappedEyebrow {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+QLabel#wrappedNumber {
+    font-size: 64px;
+    font-weight: 900;
+}
+
+QLabel#wrappedHeadline {
+    font-size: 26px;
+    font-weight: 800;
+}
+
+QLabel#wrappedBody {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+QLabel#wrappedSmall {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+QLabel#wrappedStars {
+    font-size: 26px;
+    color: #F5C451;
+}
+
+QFrame#wrappedTile QLabel#wrappedStars {
+    color: #F5C451;
+}
+
+QLabel#wrappedRank {
+    font-size: 30px;
+    font-weight: 900;
+    color: #8FB4E3;
+}
+
+QFrame#wrappedTile QLabel#wrappedRank {
+    color: #8FB4E3;
+}
+
+QLabel#wrappedRankTitle {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+QProgressBar#platformBar {
+    background-color: rgba(11, 26, 46, 45);
+    border: none;
+    border-radius: 5px;
+    max-height: 10px;
+    min-height: 10px;
+}
+
+QProgressBar#platformBar::chunk {
+    background-color: #0B1A2E;
+    border-radius: 5px;
+}
