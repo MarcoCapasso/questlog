@@ -31,7 +31,13 @@
 
 ## Scarica
 
-Questlog sarà disponibile come programma per Windows: si scarica il file `.exe` dalla pagina [Releases](https://github.com/MarcoCapasso/questlog/releases), si apre e si entra con il proprio account. Nessuna installazione di Python.
+Questlog è un programma per Windows, non serve installare niente:
+
+1. Scarica lo zip dell'[ultima versione](https://github.com/MarcoCapasso/questlog/releases/latest).
+2. Estrai la cartella `Questlog` dove preferisci e apri `Questlog.exe`.
+3. Entra con Google o con la tua email.
+
+Al primo avvio Windows potrebbe mostrare "Windows ha protetto il PC": il programma non è firmato digitalmente, come la maggior parte dei progetti personali. Clicca **Ulteriori informazioni → Esegui comunque**.
 
 Vuoi far girare il codice o contribuire? Trovi tutto nella [documentazione tecnica](docs/sviluppo.md).
 

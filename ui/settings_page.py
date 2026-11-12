@@ -4,13 +4,14 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QVBoxLayout, QWidget
 
 from core.storage import LIBRARY_FILE
+from core.version import APP_VERSION
 
 PAGE_MARGIN = 40
 PANEL_WIDTH = 680
 
 
 class SettingsPage(QWidget):
-    """Impostazioni di Questlog: account, catalogo, traduzioni e posizione dei dati."""
+    """Impostazioni di Questlog: account, catalogo, traduzioni, posizione dei dati e versione."""
 
     def __init__(self, catalog_is_demo: bool, translation_enabled: bool, cloud_enabled: bool) -> None:
         super().__init__()
@@ -44,6 +45,11 @@ class SettingsPage(QWidget):
             ("Catalogo IGDB", catalog_text),
             ("Traduzioni", translation_text),
             ("Dove sono i tuoi dati", data_text),
+            (
+                "Informazioni",
+                f"Questlog {APP_VERSION}. Nuove versioni e codice sorgente su "
+                "github.com/MarcoCapasso/questlog",
+            ),
         ]
 
         content = QWidget()
