@@ -1,5 +1,6 @@
 """Punto di ingresso dell'app desktop di Questlog."""
 
+import ctypes
 import sys
 
 from PySide6.QtCore import QLocale
@@ -15,7 +16,9 @@ from core.repository import GameRepository, JsonGameRepository
 from core.translation import DeepLTranslator, NoTranslator, Translator
 from ui.cloud_library import CloudAccount, CloudLibrary
 from ui.main_window import MainWindow
-from ui.theme import load_fonts, load_stylesheet
+from ui.theme import app_icon, load_fonts, load_stylesheet
+
+WINDOWS_APP_ID = "MarcoCapasso.Questlog"
 
 
 def create_supabase() -> Client | None:
@@ -50,11 +53,23 @@ def create_account(client: Client) -> CloudAccount:
     return CloudAccount(AuthService(client), CloudLibrary(SupabaseGameRepository(client)))
 
 
+def set_windows_app_id() -> None:
+    """Su Windows fa comparire il logo di Questlog nella barra delle applicazioni, invece di quello di Python.
+
+    Windows raggruppa le finestre per "app": senza un id proprio, lanciando python app.py
+    la finestra verrebbe considerata parte di Python e ne prenderebbe l'icona.
+    """
+    if sys.platform == "win32":
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(WINDOWS_APP_ID)
+
+
 def main() -> None:
     """Crea l'applicazione, mostra la finestra principale e avvia il ciclo di eventi."""
+    set_windows_app_id()
     QLocale.setDefault(QLocale(QLocale.Language.Italian, QLocale.Country.Italy))
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    app.setWindowIcon(app_icon())
     load_fonts()
     app.setStyleSheet(load_stylesheet())
     client = create_supabase()

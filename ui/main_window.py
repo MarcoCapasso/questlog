@@ -32,12 +32,14 @@ from ui.loading_page import LoadingPage
 from ui.settings_page import SettingsPage
 from ui.statistics_page import StatisticsPage
 from ui.tasks import run_in_background
+from ui.theme import logo_pixmap
 from ui.upload_page import UploadPage
 
 HOME_NAV_INDEX = 0
 LIBRARY_NAV_INDEX = 1
 STATISTICS_NAV_INDEX = 2
 STATUS_DURATION_MS = 6000
+LOGO_SIZE = 38
 
 
 class MainWindow(QMainWindow):
@@ -106,6 +108,11 @@ class MainWindow(QMainWindow):
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(40, 14, 40, 14)
         header_layout.setSpacing(6)
+        logo_image = QLabel()
+        logo_image.setFixedSize(LOGO_SIZE, LOGO_SIZE)
+        logo_image.setPixmap(logo_pixmap(LOGO_SIZE, self.devicePixelRatioF()))
+        header_layout.addWidget(logo_image)
+        header_layout.addSpacing(4)
         logo = QLabel("QUESTLOG")
         logo.setObjectName("logo")
         header_layout.addWidget(logo)
