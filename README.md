@@ -52,7 +52,7 @@ Python · PySide6 (Qt) · Supabase · API di IGDB · pandas e matplotlib · pyte
 - [x] App desktop con catalogo IGDB
 - [x] Account e libreria online
 - [x] Catalogo IGDB senza chiavi nell'app
-- [ ] Programma `.exe` da scaricare
+- [x] Programma `.exe` da scaricare
 
 ## Licenza
 
