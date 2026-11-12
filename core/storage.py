@@ -10,6 +10,7 @@ from core.models import Game, Playthrough
 DATA_DIR = Path("data")
 LIBRARY_FILE = DATA_DIR / "game_library.json"
 CORRUPTED_LIBRARY_FILE = DATA_DIR / "game_library_corrupted.json"
+UPLOADED_LIBRARY_FILE = DATA_DIR / "game_library_uploaded.json"
 
 
 def save_library(games: list[Game]) -> None:
@@ -47,3 +48,9 @@ def load_library() -> list[Game]:
         os.replace(LIBRARY_FILE, CORRUPTED_LIBRARY_FILE)
         print(f"Libreria danneggiata: salvata come '{CORRUPTED_LIBRARY_FILE}'. Iniziata una libreria vuota.")
         return []
+
+
+def mark_library_uploaded() -> None:
+    """Dopo il caricamento nell'account, rinomina il file locale: resta come copia, ma non viene più proposto."""
+    if LIBRARY_FILE.exists():
+        os.replace(LIBRARY_FILE, UPLOADED_LIBRARY_FILE)

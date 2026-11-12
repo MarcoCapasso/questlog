@@ -2,7 +2,7 @@ import pytest
 from postgrest.exceptions import APIError
 
 from core.cloud import CloudError
-from core.cloud_repository import SupabaseGameRepository, game_from_row, game_to_row
+from core.cloud_repository import SupabaseGameRepository, game_from_row, game_to_row, split_valid_games
 from core.models import Game, Playthrough
 
 
@@ -109,3 +109,31 @@ def test_database_errors_become_cloud_errors():
 
     with pytest.raises(CloudError, match="Non riesco a leggere la libreria online"):
         repository.fetch_games()
+
+
+def test_split_valid_games_keeps_good_games_and_explains_the_others():
+    games = [
+        make_game(),
+        Game("hades"),
+        Game("Senza ore", playthroughs=[Playthrough("PC", "completed", 0)]),
+        Game("Al contrario", playthroughs=[Playthrough("PC", "completed", 5, "2026-03-01", "2026-02-01")]),
+        Game("Voto vecchio", rating=8),
+        Game("Celeste"),
+    ]
+
+    valid, problems = split_valid_games(games)
+
+    assert [game.title for game in valid] == ["Hades", "Celeste"]
+    assert problems == [
+        "hades: c'è già un gioco con questo titolo",
+        "Senza ore: una partita completata ha 0 ore",
+        "Al contrario: una partita finisce prima di iniziare",
+        "Voto vecchio: il voto deve essere da 1 a 5 stelle",
+    ]
+
+
+def test_split_valid_games_rejects_a_repeated_igdb_id():
+    valid, problems = split_valid_games([Game("A", igdb_id=1), Game("B", igdb_id=1)])
+
+    assert [game.title for game in valid] == ["A"]
+    assert problems == ["B: è già collegato a un altro gioco della libreria"]

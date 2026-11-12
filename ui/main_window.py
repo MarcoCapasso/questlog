@@ -18,6 +18,7 @@ from core.catalog import CatalogGame, GameCatalog
 from core.cloud import CloudUser
 from core.models import Game
 from core.repository import GameRepository
+from core.storage import LIBRARY_FILE, load_library
 from core.translation import NoTranslator, Translator
 from ui.auth_page import AuthPage
 from ui.avatar import AvatarButton
@@ -31,6 +32,7 @@ from ui.loading_page import LoadingPage
 from ui.settings_page import SettingsPage
 from ui.statistics_page import StatisticsPage
 from ui.tasks import run_in_background
+from ui.upload_page import UploadPage
 
 HOME_NAV_INDEX = 0
 LIBRARY_NAV_INDEX = 1
@@ -76,6 +78,9 @@ class MainWindow(QMainWindow):
             self.auth_page.signed_in.connect(self.on_signed_in)
         self.loading_page = LoadingPage()
         self.loading_page.retry_requested.connect(self.load_library)
+        self.upload_page = UploadPage(account.library.remote) if account is not None else None
+        if self.upload_page is not None:
+            self.upload_page.done.connect(self.enter_library)
         if account is not None:
             account.library.sync_failed.connect(self.show_status)
         self.page_before_game: QWidget = self.library_page
@@ -134,7 +139,13 @@ class MainWindow(QMainWindow):
         self.avatar.set_login_available(account is not None)
         header_layout.addWidget(self.avatar)
         extra_pages = (
-            self.catalog_page, self.game_page, self.settings_page, self.data_page, self.auth_page, self.loading_page
+            self.catalog_page,
+            self.game_page,
+            self.settings_page,
+            self.data_page,
+            self.auth_page,
+            self.loading_page,
+            self.upload_page,
         )
         for extra_page in extra_pages:
             if extra_page is not None:
@@ -171,7 +182,7 @@ class MainWindow(QMainWindow):
         Impostazioni, dati, accesso e attesa non sono nella barra: nessun bottone resta evidenziato.
         """
         self.pages.setCurrentWidget(page)
-        if page in (self.settings_page, self.data_page, self.auth_page, self.loading_page):
+        if page in (self.settings_page, self.data_page, self.auth_page, self.loading_page, self.upload_page):
             self.nav_buttons.setExclusive(False)
             for button in self.nav_buttons.buttons():
                 button.setChecked(False)
@@ -223,7 +234,16 @@ class MainWindow(QMainWindow):
         run_in_background(self.account.library.remote.fetch_games, self.on_library_loaded, self.on_library_failed)
 
     def on_library_loaded(self, games: list[Game]) -> None:
-        """Libreria arrivata: si apre la Home, con la barra di navigazione."""
+        """Libreria arrivata. Se l'account è vuoto e su questo PC c'è una libreria, propone di caricarla."""
+        local_games = load_library() if not games and LIBRARY_FILE.exists() else []
+        if local_games and self.upload_page is not None:
+            self.upload_page.start(local_games)
+            self.show_page(self.upload_page)
+            return
+        self.enter_library(games)
+
+    def enter_library(self, games: list[Game]) -> None:
+        """Si entra: la libreria dell'account diventa quella delle pagine e si apre la Home."""
         if self.account is None:
             return
         self.account.library.set_games(games)

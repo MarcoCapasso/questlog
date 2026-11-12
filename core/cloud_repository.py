@@ -4,6 +4,7 @@ Le regole RLS fanno vedere a ogni utente solo le sue righe: qui non serve mai fi
 """
 
 from collections.abc import Callable
+from datetime import date
 from typing import Any, cast
 
 from httpx import HTTPError
@@ -11,8 +12,11 @@ from postgrest.exceptions import APIError
 from supabase import Client
 
 from core.cloud import CloudError
+from core.library import MAX_RATING
 from core.models import Game, Playthrough
 
+VALID_STATUSES = ("playing", "completed", "dropped")
+MAX_HOURS = 999_999.9
 GAME_COLUMNS = (
     "title, rating, igdb_id, cover_url, position, "
     "playthroughs(platform, status, hours_played, start_date, completion_date, notes, position)"
@@ -92,3 +96,64 @@ def game_from_row(row: dict[str, Any]) -> Game:
         igdb_id=row["igdb_id"],
         cover_url=row["cover_url"],
     )
+
+
+def split_valid_games(games: list[Game]) -> tuple[list[Game], list[str]]:
+    """Divide i giochi tra quelli che il database accetta e i problemi di quelli che rifiuterebbe.
+
+    Sono le stesse regole dei check di schema.sql, controllate prima dell'invio: così un solo gioco
+    sbagliato non fa fallire il caricamento di tutta la libreria. Restituisce (giochi validi, problemi).
+    """
+    valid: list[Game] = []
+    problems: list[str] = []
+    seen_titles: set[str] = set()
+    seen_igdb_ids: set[int] = set()
+    for game in games:
+        problem = find_game_problem(game)
+        if problem is None and game.title.strip().lower() in seen_titles:
+            problem = "c'è già un gioco con questo titolo"
+        if problem is None and game.igdb_id is not None and game.igdb_id in seen_igdb_ids:
+            problem = "è già collegato a un altro gioco della libreria"
+        if problem is not None:
+            problems.append(f"{game.title or 'Gioco senza titolo'}: {problem}")
+            continue
+        seen_titles.add(game.title.strip().lower())
+        if game.igdb_id is not None:
+            seen_igdb_ids.add(game.igdb_id)
+        valid.append(game)
+    return valid, problems
+
+
+def find_game_problem(game: Game) -> str | None:
+    """Restituisce il primo motivo per cui il database rifiuterebbe questo gioco, oppure None."""
+    if game.title.strip() == "":
+        return "manca il titolo"
+    if game.rating is not None and not 1 <= game.rating <= MAX_RATING:
+        return f"il voto deve essere da 1 a {MAX_RATING} stelle"
+    for playthrough in game.playthroughs:
+        problem = find_playthrough_problem(playthrough)
+        if problem is not None:
+            return problem
+    return None
+
+
+def find_playthrough_problem(playthrough: Playthrough) -> str | None:
+    """Restituisce il primo motivo per cui il database rifiuterebbe questa partita, oppure None."""
+    if playthrough.platform.strip() == "":
+        return "una partita non ha la piattaforma"
+    if playthrough.status not in VALID_STATUSES:
+        return f"stato sconosciuto ({playthrough.status})"
+    if not 0 <= playthrough.hours_played <= MAX_HOURS:
+        return "ore di gioco non valide"
+    if playthrough.status == "completed" and playthrough.hours_played == 0:
+        return "una partita completata ha 0 ore"
+    if playthrough.status != "completed" and playthrough.completion_date is not None:
+        return "una partita non completata ha la data di fine"
+    try:
+        start = date.fromisoformat(playthrough.start_date) if playthrough.start_date else None
+        end = date.fromisoformat(playthrough.completion_date) if playthrough.completion_date else None
+    except ValueError:
+        return "una data non è valida"
+    if start is not None and end is not None and end < start:
+        return "una partita finisce prima di iniziare"
+    return None

@@ -1,13 +1,18 @@
 """Avatar in alto a destra con il menu del profilo: accesso, impostazioni, dati e uscita dall'account."""
 
-from PySide6.QtCore import QPoint, QSize, Qt, Signal
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import QPoint, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QMenu, QToolButton, QWidget
 
 from core.cloud import CloudUser
+from ui.covers import cover_loader, rounded_pixmap
 from ui.theme import ICONS_DIR
 
 AVATAR_SIZE = 40
+PICTURE_SIZE = AVATAR_SIZE - 2
+DEFAULT_ICON_SIZE = 22
+INITIAL_BACKGROUND = "#3A4553"
+INITIAL_COLOR = "#F1F3F5"
 MENU_GAP = 8
 
 
@@ -26,10 +31,10 @@ class AvatarButton(QToolButton):
         super().__init__(parent)
         self.setObjectName("avatarButton")
         self.setFixedSize(AVATAR_SIZE, AVATAR_SIZE)
-        self.setIcon(QIcon(str(ICONS_DIR / "user.svg")))
-        self.setIconSize(QSize(22, 22))
         self.setToolTip("Profilo")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.picture_url: str | None = None
+        cover_loader().loaded.connect(self.on_picture_loaded)
 
         self.login_available = False
         self.profile_menu = QMenu(self)
@@ -63,6 +68,52 @@ class AvatarButton(QToolButton):
         self.logout_action.setVisible(logged_in)
         self.data_action.setVisible(logged_in or not self.login_available)
         self.setToolTip(user.name if user is not None else "Profilo")
+        self.show_picture(user)
+
+    def show_picture(self, user: CloudUser | None) -> None:
+        """Nel cerchio: la foto di Google se c'è, altrimenti l'iniziale del nome; senza login l'icona generica.
+
+        La foto si scarica con lo stesso sistema delle copertine: compare l'iniziale e poi, appena arriva, la foto.
+        """
+        self.picture_url = user.avatar_url if user is not None else None
+        if user is None:
+            self.setIcon(QIcon(str(ICONS_DIR / "user.svg")))
+            self.setIconSize(QSize(DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE))
+            return
+        self.setIconSize(QSize(PICTURE_SIZE, PICTURE_SIZE))
+        self.setIcon(QIcon(self.initial_pixmap(user.name)))
+        if self.picture_url is not None:
+            picture = cover_loader().request(self.picture_url)
+            if picture is not None:
+                self.on_picture_loaded(self.picture_url, picture)
+
+    def on_picture_loaded(self, url: str, picture: QPixmap) -> None:
+        """Mostra la foto appena scaricata, ritagliata a cerchio, se è ancora quella dell'utente."""
+        if url != self.picture_url:
+            return
+        size = QSize(PICTURE_SIZE, PICTURE_SIZE)
+        self.setIcon(QIcon(rounded_pixmap(picture, size, PICTURE_SIZE // 2, self.devicePixelRatioF())))
+
+    def initial_pixmap(self, name: str) -> QPixmap:
+        """Disegna un cerchio con l'iniziale del nome, alla risoluzione giusta per lo schermo."""
+        ratio = self.devicePixelRatioF()
+        pixmap = QPixmap(round(PICTURE_SIZE * ratio), round(PICTURE_SIZE * ratio))
+        pixmap.setDevicePixelRatio(ratio)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(INITIAL_BACKGROUND))
+        area = QRectF(0, 0, PICTURE_SIZE, PICTURE_SIZE)
+        painter.drawEllipse(area)
+        font = QFont(self.font())
+        font.setPixelSize(16)
+        font.setBold(True)
+        painter.setFont(font)
+        painter.setPen(QColor(INITIAL_COLOR))
+        painter.drawText(area, Qt.AlignmentFlag.AlignCenter, name[:1].upper() or "?")
+        painter.end()
+        return pixmap
 
     def show_menu(self) -> None:
         """Apre il menu sotto l'avatar, con il bordo destro allineato al suo, così non esce dalla finestra."""
