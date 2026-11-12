@@ -8,8 +8,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QStackedWidget,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -35,13 +33,11 @@ from ui.game_card import PLAYTHROUGH_STATUS_LABELS, format_release_year
 from ui.playthrough_form import PlaythroughForm
 from ui.tasks import run_in_background
 from ui.theme import ICONS_DIR
-from ui.widgets import RatingInput
+from ui.widgets import ConfirmSwitch, RatingInput
 
 PAGE_MARGIN = 40
 COVER_SIZE = QSize(210, 280)
 SUMMARY_WIDTH = 680
-NORMAL_PAGE = 0
-CONFIRM_PAGE = 1
 NOT_LINKED_HINT = "Cercalo in Aggiungi gioco per collegarlo a IGDB e vedere copertina e descrizione."
 
 
@@ -143,6 +139,15 @@ class GamePage(QWidget):
         library_layout.addWidget(self.total_hours_label)
         library_layout.addLayout(self.playthrough_list)
 
+        remove_button = QPushButton("Rimuovi dalla libreria")
+        remove_button.setObjectName("dangerLink")
+        remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.remove_switch = ConfirmSwitch(remove_button, "Rimuovere il gioco e tutte le sue partite?", "Rimuovi")
+        remove_button.clicked.connect(self.remove_switch.ask)
+        self.remove_switch.confirmed.connect(self.remove_from_library)
+        library_layout.addSpacing(12)
+        library_layout.addWidget(self.remove_switch, alignment=Qt.AlignmentFlag.AlignLeft)
+
         self.playthrough_form = PlaythroughForm()
         self.playthrough_form.setParent(self.library_section)
         self.playthrough_form.hide()
@@ -193,6 +198,7 @@ class GamePage(QWidget):
         """Riparte dall'alto della pagina, senza sfondo e immagini finché non arrivano i dettagli."""
         self.details_loaded = False
         self.close_playthrough_form()
+        self.remove_switch.cancel()
         self.backdrop.set_url(None)
         self.carousel.set_images([])
         self.screenshots_section.hide()
@@ -361,6 +367,23 @@ class GamePage(QWidget):
         self.save()
         self.update_view()
 
+    def remove_from_library(self) -> None:
+        """Toglie il gioco dalla libreria con tutte le partite.
+
+        Se la pagina mostra un gioco del catalogo resta aperta, pronta per riaggiungerlo;
+        altrimenti (gioco non collegato a IGDB) non resterebbe nulla da mostrare e si torna indietro.
+        """
+        if self.game is None:
+            return
+        self.games.remove(self.game)
+        self.game = None
+        self.remove_switch.cancel()
+        self.save()
+        if self.catalog_game is None:
+            self.back_requested.emit()
+        else:
+            self.update_view()
+
     def save(self) -> None:
         """Salva la libreria e avvisa la finestra che è cambiata."""
         self.repository.save_games(self.games)
@@ -380,7 +403,7 @@ class GamePage(QWidget):
 class PlaythroughRow(QFrame):
     """Una riga dell'elenco partite: piattaforma, stato, date, note, ore e i bottoni per modificarla o eliminarla.
 
-    L'eliminazione chiede conferma nella riga stessa: ore e bottoni lasciano il posto a "Eliminare? Annulla / Elimina".
+    L'eliminazione chiede conferma nella riga stessa, con un ConfirmSwitch.
     """
 
     edit_requested = Signal()
@@ -410,7 +433,6 @@ class PlaythroughRow(QFrame):
         edit_button = create_row_action("pencil.svg", "Modifica partita")
         edit_button.clicked.connect(self.edit_requested.emit)
         delete_button = create_row_action("trash.svg", "Elimina partita")
-        delete_button.clicked.connect(self.ask_confirmation)
         normal_actions = QWidget()
         normal_layout = QHBoxLayout(normal_actions)
         normal_layout.setContentsMargins(0, 0, 0, 0)
@@ -420,54 +442,20 @@ class PlaythroughRow(QFrame):
         normal_layout.addWidget(edit_button)
         normal_layout.addWidget(delete_button)
 
-        question = QLabel("Eliminare la partita?")
-        question.setObjectName("confirmQuestion")
-        cancel_button = QPushButton("Annulla")
-        cancel_button.clicked.connect(self.cancel_confirmation)
-        confirm_button = QPushButton("Elimina")
-        confirm_button.setObjectName("dangerButton")
-        confirm_button.clicked.connect(self.delete_confirmed.emit)
-        confirm_actions = QWidget()
-        confirm_layout = QHBoxLayout(confirm_actions)
-        confirm_layout.setContentsMargins(0, 0, 0, 0)
-        confirm_layout.setSpacing(8)
-        confirm_layout.addWidget(question)
-        confirm_layout.addWidget(cancel_button)
-        confirm_layout.addWidget(confirm_button)
-
-        self.action_pages = QStackedWidget()
-        self.action_pages.addWidget(normal_actions)
-        self.action_pages.addWidget(confirm_actions)
+        actions = ConfirmSwitch(normal_actions, "Eliminare la partita?", "Elimina")
+        actions.confirmed.connect(self.delete_confirmed.emit)
+        actions.confirming_changed.connect(self.set_confirming)
+        delete_button.clicked.connect(actions.ask)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(20, 16, 12, 16)
         layout.setSpacing(16)
         layout.addLayout(text, stretch=1)
-        layout.addWidget(self.action_pages)
-        self.show_action_page(NORMAL_PAGE)
+        layout.addWidget(actions)
 
-    def ask_confirmation(self) -> None:
-        """Al posto di ore e bottoni mostra la domanda di conferma."""
-        self.show_action_page(CONFIRM_PAGE)
-
-    def cancel_confirmation(self) -> None:
-        """Torna a ore e bottoni, senza eliminare nulla."""
-        self.show_action_page(NORMAL_PAGE)
-
-    def show_action_page(self, page_index: int) -> None:
-        """Mostra una delle due pagine di azioni e adatta la larghezza a quella visibile.
-
-        Un QStackedWidget è largo quanto la sua pagina più grande: dando alle pagine nascoste
-        la politica Ignored, conta solo quella visibile.
-        """
-        for index in range(self.action_pages.count()):
-            policy = QSizePolicy.Policy.Preferred if index == page_index else QSizePolicy.Policy.Ignored
-            page = self.action_pages.widget(index)
-            if page is not None:
-                page.setSizePolicy(policy, policy)
-        self.action_pages.setCurrentIndex(page_index)
-        self.action_pages.adjustSize()
-        self.setProperty("confirming", page_index == CONFIRM_PAGE)
+    def set_confirming(self, confirming: bool) -> None:
+        """Durante la conferma la riga ha il bordo rosso (proprietà dinamica usata dal QSS)."""
+        self.setProperty("confirming", confirming)
         self.style().unpolish(self)
         self.style().polish(self)
 

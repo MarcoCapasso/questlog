@@ -217,6 +217,16 @@ QLabel#confirmQuestion {
     padding-right: 4px;
 }
 
+QPushButton#dangerLink {
+    background: transparent;
+    border: 1px solid #6A2E2E;
+    color: #FFA8A8;
+}
+
+QPushButton#dangerLink:hover {
+    background-color: rgba(229, 72, 77, 30);
+}
+
 QPushButton#dangerButton {
     background-color: #E5484D;
     border: 1px solid #E5484D;

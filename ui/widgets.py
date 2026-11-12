@@ -9,6 +9,9 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
+    QSizePolicy,
+    QStackedWidget,
     QToolButton,
     QWidget,
 )
@@ -151,6 +154,65 @@ class DateInput(QDateEdit):
         self.setDisplayFormat(DATE_FORMAT)
         self.setCalendarPopup(True)
         self.setCalendarWidget(Calendar())
+
+
+class ConfirmSwitch(QStackedWidget):
+    """Mostra un contenuto normale; con ask() lo sostituisce con "domanda + Annulla + conferma", senza finestre.
+
+    Emette confirmed se si conferma e confirming_changed(True/False) quando entra o esce dalla conferma.
+    """
+
+    confirmed = Signal()
+    confirming_changed = Signal(bool)
+
+    NORMAL_PAGE = 0
+    CONFIRM_PAGE = 1
+
+    def __init__(self, normal_content: QWidget, question: str, confirm_text: str) -> None:
+        super().__init__()
+        question_label = QLabel(question)
+        question_label.setObjectName("confirmQuestion")
+        cancel_button = QPushButton("Annulla")
+        cancel_button.clicked.connect(self.cancel)
+        confirm_button = QPushButton(confirm_text)
+        confirm_button.setObjectName("dangerButton")
+        confirm_button.clicked.connect(self.confirmed.emit)
+
+        confirm_content = QWidget()
+        confirm_layout = QHBoxLayout(confirm_content)
+        confirm_layout.setContentsMargins(0, 0, 0, 0)
+        confirm_layout.setSpacing(8)
+        confirm_layout.addWidget(question_label)
+        confirm_layout.addWidget(cancel_button)
+        confirm_layout.addWidget(confirm_button)
+
+        self.addWidget(normal_content)
+        self.addWidget(confirm_content)
+        self.show_page(self.NORMAL_PAGE)
+
+    def ask(self) -> None:
+        """Mostra la domanda di conferma."""
+        self.show_page(self.CONFIRM_PAGE)
+        self.confirming_changed.emit(True)
+
+    def cancel(self) -> None:
+        """Torna al contenuto normale, senza fare nulla."""
+        self.show_page(self.NORMAL_PAGE)
+        self.confirming_changed.emit(False)
+
+    def show_page(self, page_index: int) -> None:
+        """Mostra una pagina e adatta la larghezza a quella visibile.
+
+        Un QStackedWidget è largo quanto la sua pagina più grande: dando alle pagine nascoste
+        la politica Ignored, conta solo quella visibile.
+        """
+        for index in range(self.count()):
+            policy = QSizePolicy.Policy.Preferred if index == page_index else QSizePolicy.Policy.Ignored
+            page = self.widget(index)
+            if page is not None:
+                page.setSizePolicy(policy, policy)
+        self.setCurrentIndex(page_index)
+        self.adjustSize()
 
 
 class RatingInput(QWidget):
