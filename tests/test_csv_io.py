@@ -82,7 +82,7 @@ def test_export_then_import_returns_same_library(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     games = [
         Game("Zelda: Ocarina of Time; Master Quest", 5,
-             [Playthrough("Switch", "completed", 30, "2026-01-01", "2026-02-01")]),
+             [Playthrough("Nintendo Switch", "completed", 30, "2026-01-01", "2026-02-01")]),
         Game("Celeste"),
     ]
 
@@ -99,3 +99,9 @@ def test_notes_column_is_optional_and_read_when_present():
 
     assert games[0].playthroughs[0].notes == ""
     assert games[1].playthroughs[0].notes == "solo storia"
+
+
+def test_import_normalizes_platform_names():
+    games = rows_to_games([make_row(platform="ps4")], TODAY)
+
+    assert games[0].playthroughs[0].platform == "PlayStation 4"

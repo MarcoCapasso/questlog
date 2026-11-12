@@ -6,6 +6,7 @@ from typing import Any
 import requests
 
 from core.catalog import CatalogGame
+from core.platforms import normalize_platforms
 
 TOKEN_URL = "https://id.twitch.tv/oauth2/token"
 API_URL = "https://api.igdb.com/v4"
@@ -146,7 +147,7 @@ def parse_game(row: dict[str, Any]) -> CatalogGame:
         title=row["name"],
         cover_url=cover_url,
         release_year=release_year,
-        platforms=[platform["name"] for platform in row.get("platforms", [])],
+        platforms=normalize_platforms([platform["name"] for platform in row.get("platforms", [])]),
         genres=[genre["name"] for genre in row.get("genres", [])],
         summary=row.get("summary", ""),
         screenshot_urls=[image_url(image_id, SCREENSHOT_SIZE) for image_id in screenshot_ids],

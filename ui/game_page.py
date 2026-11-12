@@ -31,6 +31,7 @@ from core.library import (
     replace_playthrough,
 )
 from core.models import Game, Playthrough
+from core.platforms import normalize_platform
 from core.repository import GameRepository
 from core.translation import Translator, translate_summary
 from ui.backdrop import BackdropWidget
@@ -62,7 +63,6 @@ class GamePage(QWidget):
         self.translator = translator
         self.details_loaded = False
         self.games: list[Game] = []
-        self.platform_suggestions: list[str] = []
         self.game: Game | None = None
         self.catalog_game: CatalogGame | None = None
 
@@ -342,7 +342,6 @@ class GamePage(QWidget):
         self.close_playthrough_form()
         self.editing_index = playthrough_index
         game_platforms = list(self.catalog_game.platforms) if self.catalog_game is not None else []
-        self.platform_suggestions = game_platforms
         playthrough = None if playthrough_index is None else self.game.playthroughs[playthrough_index]
         self.playthrough_form.start(game_platforms, known_platforms(self.games), playthrough)
 
@@ -365,10 +364,7 @@ class GamePage(QWidget):
         """Aggiunge la nuova partita o sostituisce quella modificata, con la grafia già nota della piattaforma."""
         if self.game is None:
             return
-        playthrough.platform = find_platform_spelling(self.games, playthrough.platform)
-        for suggestion in self.platform_suggestions:
-            if suggestion.lower() == playthrough.platform.lower():
-                playthrough.platform = suggestion
+        playthrough.platform = find_platform_spelling(self.games, normalize_platform(playthrough.platform))
         if self.editing_index is None:
             self.game.playthroughs.append(playthrough)
         else:

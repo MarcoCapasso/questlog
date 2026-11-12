@@ -37,6 +37,7 @@ from core.library import (
     today_iso,
 )
 from core.models import Game, Playthrough
+from core.platforms import normalize_platform
 from core.storage import save_library
 from terminal.display import (
     print_game_details,
@@ -62,7 +63,7 @@ from terminal.prompts import (
 
 def ask_new_playthrough(games: list[Game]) -> Playthrough:
     """Chiede i dati di una nuova partita, riusando la grafia delle piattaforme già in libreria."""
-    platform = find_platform_spelling(games, ask_non_empty_text("Piattaforma: "))
+    platform = find_platform_spelling(games, normalize_platform(ask_non_empty_text("Piattaforma: ")))
     status = ask_status(PLAYTHROUGH_STATUSES)
     hours_played = ask_hours_played(allow_zero=status != "completed")
     start_date = ask_date("Data inizio (GG/MM/AAAA, Invio = oggi): ")
@@ -224,7 +225,8 @@ def edit_playthrough(games: list[Game], game: Game) -> None:
     print_playthrough_edit_menu()
     choice = input("Scegli un'opzione: ").strip()
     if choice == "1":
-        playthrough.platform = ask_non_empty_text("Nuova piattaforma: ")
+        new_platform = normalize_platform(ask_non_empty_text("Nuova piattaforma: "))
+        playthrough.platform = find_platform_spelling(games, new_platform)
     elif choice == "2":
         if not edit_playthrough_status(playthrough):
             return

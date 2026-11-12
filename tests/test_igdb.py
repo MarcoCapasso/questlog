@@ -23,7 +23,7 @@ def test_parse_game_reads_igdb_fields():
         title="The Witcher 3: Wild Hunt",
         cover_url="https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg",
         release_year=2015,
-        platforms=["PC (Microsoft Windows)"],
+        platforms=["PC"],
         genres=["Role-playing (RPG)"],
         summary="Geralt cerca Ciri.",
     )

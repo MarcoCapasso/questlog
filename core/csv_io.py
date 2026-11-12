@@ -12,6 +12,7 @@ from core.library import (
     is_valid_rating,
 )
 from core.models import Game, Playthrough
+from core.platforms import normalize_platform
 from core.storage import DATA_DIR
 
 REQUIRED_FIELDS = ["title", "rating", "platform", "status", "hours_played", "start_date", "completion_date"]
@@ -112,7 +113,8 @@ def row_to_playthrough(row: dict, today: str) -> Playthrough:
         raise ValueError("la data di completamento precede la data di inizio.")
 
     notes = read_cell(row, "notes")
-    return Playthrough(read_cell(row, "platform"), status, hours_played, start_date, completion_date, notes)
+    platform = normalize_platform(read_cell(row, "platform"))
+    return Playthrough(platform, status, hours_played, start_date, completion_date, notes)
 
 
 def read_cell(row: dict, field: str) -> str:
