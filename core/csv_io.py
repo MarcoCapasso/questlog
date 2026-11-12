@@ -14,7 +14,8 @@ from core.library import (
 from core.models import Game, Playthrough
 from core.storage import DATA_DIR
 
-CSV_FIELDS = ["title", "rating", "platform", "status", "hours_played", "start_date", "completion_date"]
+REQUIRED_FIELDS = ["title", "rating", "platform", "status", "hours_played", "start_date", "completion_date"]
+CSV_FIELDS = REQUIRED_FIELDS + ["notes"]
 CSV_FILE = DATA_DIR / "questlog_export.csv"
 
 
@@ -40,16 +41,20 @@ def games_to_rows(games: list[Game]) -> list[dict]:
             row["hours_played"] = playthrough.hours_played
             row["start_date"] = playthrough.start_date
             row["completion_date"] = playthrough.completion_date
+            row["notes"] = playthrough.notes
             rows.append(row)
     return rows
 
 
 def import_csv(today: str) -> list[Game]:
-    """Legge il file CSV e restituisce i giochi; solleva ValueError se il file non è valido."""
+    """Legge il file CSV e restituisce i giochi; solleva ValueError se il file non è valido.
+
+    La colonna "notes" è facoltativa, così si possono ancora importare i CSV esportati prima delle note.
+    """
     with open(CSV_FILE, "r", newline="", encoding="utf-8-sig") as file:
         reader = csv.DictReader(file, delimiter=";")
-        if reader.fieldnames is None or not set(CSV_FIELDS).issubset(reader.fieldnames):
-            raise ValueError(f"Intestazione non valida: servono le colonne {', '.join(CSV_FIELDS)}.")
+        if reader.fieldnames is None or not set(REQUIRED_FIELDS).issubset(reader.fieldnames):
+            raise ValueError(f"Intestazione non valida: servono le colonne {', '.join(REQUIRED_FIELDS)}.")
         return rows_to_games(list(reader), today)
 
 
@@ -106,7 +111,8 @@ def row_to_playthrough(row: dict, today: str) -> Playthrough:
     if not is_valid_date_order(start_date, completion_date):
         raise ValueError("la data di completamento precede la data di inizio.")
 
-    return Playthrough(read_cell(row, "platform"), status, hours_played, start_date, completion_date)
+    notes = read_cell(row, "notes")
+    return Playthrough(read_cell(row, "platform"), status, hours_played, start_date, completion_date, notes)
 
 
 def read_cell(row: dict, field: str) -> str:

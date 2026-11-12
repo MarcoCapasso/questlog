@@ -9,7 +9,7 @@ TODAY = "2026-03-20"
 
 def make_row(**cells: str) -> dict:
     row = {"title": "Hades", "rating": "", "platform": "PC", "status": "playing",
-           "hours_played": "10", "start_date": "", "completion_date": ""}
+           "hours_played": "10", "start_date": "", "completion_date": "", "notes": ""}
     row.update(cells)
     return row
 
@@ -89,3 +89,13 @@ def test_export_then_import_returns_same_library(tmp_path, monkeypatch):
     export_csv(games)
 
     assert import_csv(TODAY) == games
+
+
+def test_notes_column_is_optional_and_read_when_present():
+    old_row = make_row()
+    del old_row["notes"]
+
+    games = rows_to_games([old_row, make_row(title="Celeste", notes="solo storia")], TODAY)
+
+    assert games[0].playthroughs[0].notes == ""
+    assert games[1].playthroughs[0].notes == "solo storia"

@@ -143,11 +143,14 @@ def format_playthrough_count(game: Game) -> str:
 
 
 def format_playthrough_line(playthrough: Playthrough) -> str:
-    """Restituisce la descrizione di una partita su una riga."""
-    return (
+    """Restituisce la descrizione di una partita su una riga, con le note in fondo se ci sono."""
+    line = (
         f"{playthrough.platform} | {playthrough.status} | {playthrough.hours_played:g} ore | "
         f"{format_date(playthrough.start_date)} → {format_date(playthrough.completion_date)}"
     )
+    if playthrough.notes:
+        line += f" | {playthrough.notes}"
+    return line
 
 
 def format_rating(rating: float | None) -> str:

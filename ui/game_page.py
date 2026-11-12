@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
+    QStackedWidget,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -20,6 +22,7 @@ from core.library import (
     find_platform_spelling,
     is_backlog,
     known_platforms,
+    remove_playthrough,
     replace_playthrough,
 )
 from core.models import Game, Playthrough
@@ -37,6 +40,8 @@ from ui.widgets import RatingInput
 PAGE_MARGIN = 40
 COVER_SIZE = QSize(210, 280)
 SUMMARY_WIDTH = 680
+NORMAL_PAGE = 0
+CONFIRM_PAGE = 1
 NOT_LINKED_HINT = "Cercalo in Aggiungi gioco per collegarlo a IGDB e vedere copertina e descrizione."
 
 
@@ -286,6 +291,7 @@ class GamePage(QWidget):
         for index in reversed(range(len(game.playthroughs))):
             row = PlaythroughRow(game.playthroughs[index])
             row.edit_requested.connect(lambda chosen=index: self.open_playthrough_form(chosen))
+            row.delete_confirmed.connect(lambda chosen=index: self.delete_playthrough(chosen))
             self.playthrough_list.addWidget(row)
             self.playthrough_rows.append(row)
 
@@ -347,6 +353,14 @@ class GamePage(QWidget):
         self.save()
         self.update_view()
 
+    def delete_playthrough(self, playthrough_index: int) -> None:
+        """Elimina la partita; se era l'ultima il gioco torna da giocare e perde il voto."""
+        if self.game is None:
+            return
+        remove_playthrough(self.game, playthrough_index)
+        self.save()
+        self.update_view()
+
     def save(self) -> None:
         """Salva la libreria e avvisa la finestra che è cambiata."""
         self.repository.save_games(self.games)
@@ -364,9 +378,13 @@ class GamePage(QWidget):
 
 
 class PlaythroughRow(QFrame):
-    """Una riga dell'elenco partite: piattaforma e stato, date, ore e il bottone per modificarla."""
+    """Una riga dell'elenco partite: piattaforma, stato, date, note, ore e i bottoni per modificarla o eliminarla.
+
+    L'eliminazione chiede conferma nella riga stessa: ore e bottoni lasciano il posto a "Eliminare? Annulla / Elimina".
+    """
 
     edit_requested = Signal()
+    delete_confirmed = Signal()
 
     def __init__(self, playthrough: Playthrough) -> None:
         super().__init__()
@@ -377,28 +395,92 @@ class PlaythroughRow(QFrame):
         title.setObjectName("cardTitle")
         dates = QLabel(format_dates(playthrough))
         dates.setObjectName("cardDetails")
-        hours = QLabel(f"{playthrough.hours_played:g} ore")
-        hours.setObjectName("playthroughHours")
-
         text = QVBoxLayout()
         text.setSpacing(4)
         text.addWidget(title)
         text.addWidget(dates)
+        if playthrough.notes:
+            notes = QLabel(playthrough.notes)
+            notes.setObjectName("playthroughNotes")
+            notes.setWordWrap(True)
+            text.addWidget(notes)
 
-        edit_button = QToolButton()
-        edit_button.setObjectName("rowAction")
-        edit_button.setIcon(QIcon(str(ICONS_DIR / "pencil.svg")))
-        edit_button.setIconSize(QSize(18, 18))
-        edit_button.setToolTip("Modifica partita")
-        edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        hours = QLabel(f"{playthrough.hours_played:g} ore")
+        hours.setObjectName("playthroughHours")
+        edit_button = create_row_action("pencil.svg", "Modifica partita")
         edit_button.clicked.connect(self.edit_requested.emit)
+        delete_button = create_row_action("trash.svg", "Elimina partita")
+        delete_button.clicked.connect(self.ask_confirmation)
+        normal_actions = QWidget()
+        normal_layout = QHBoxLayout(normal_actions)
+        normal_layout.setContentsMargins(0, 0, 0, 0)
+        normal_layout.setSpacing(4)
+        normal_layout.addWidget(hours)
+        normal_layout.addSpacing(12)
+        normal_layout.addWidget(edit_button)
+        normal_layout.addWidget(delete_button)
+
+        question = QLabel("Eliminare la partita?")
+        question.setObjectName("confirmQuestion")
+        cancel_button = QPushButton("Annulla")
+        cancel_button.clicked.connect(self.cancel_confirmation)
+        confirm_button = QPushButton("Elimina")
+        confirm_button.setObjectName("dangerButton")
+        confirm_button.clicked.connect(self.delete_confirmed.emit)
+        confirm_actions = QWidget()
+        confirm_layout = QHBoxLayout(confirm_actions)
+        confirm_layout.setContentsMargins(0, 0, 0, 0)
+        confirm_layout.setSpacing(8)
+        confirm_layout.addWidget(question)
+        confirm_layout.addWidget(cancel_button)
+        confirm_layout.addWidget(confirm_button)
+
+        self.action_pages = QStackedWidget()
+        self.action_pages.addWidget(normal_actions)
+        self.action_pages.addWidget(confirm_actions)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(20, 16, 12, 16)
         layout.setSpacing(16)
         layout.addLayout(text, stretch=1)
-        layout.addWidget(hours)
-        layout.addWidget(edit_button)
+        layout.addWidget(self.action_pages)
+        self.show_action_page(NORMAL_PAGE)
+
+    def ask_confirmation(self) -> None:
+        """Al posto di ore e bottoni mostra la domanda di conferma."""
+        self.show_action_page(CONFIRM_PAGE)
+
+    def cancel_confirmation(self) -> None:
+        """Torna a ore e bottoni, senza eliminare nulla."""
+        self.show_action_page(NORMAL_PAGE)
+
+    def show_action_page(self, page_index: int) -> None:
+        """Mostra una delle due pagine di azioni e adatta la larghezza a quella visibile.
+
+        Un QStackedWidget è largo quanto la sua pagina più grande: dando alle pagine nascoste
+        la politica Ignored, conta solo quella visibile.
+        """
+        for index in range(self.action_pages.count()):
+            policy = QSizePolicy.Policy.Preferred if index == page_index else QSizePolicy.Policy.Ignored
+            page = self.action_pages.widget(index)
+            if page is not None:
+                page.setSizePolicy(policy, policy)
+        self.action_pages.setCurrentIndex(page_index)
+        self.action_pages.adjustSize()
+        self.setProperty("confirming", page_index == CONFIRM_PAGE)
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+
+def create_row_action(icon_name: str, tooltip: str) -> QToolButton:
+    """Restituisce un bottone rotondo con un'icona, per le azioni su una riga."""
+    button = QToolButton()
+    button.setObjectName("rowAction")
+    button.setIcon(QIcon(str(ICONS_DIR / icon_name)))
+    button.setIconSize(QSize(18, 18))
+    button.setToolTip(tooltip)
+    button.setCursor(Qt.CursorShape.PointingHandCursor)
+    return button
 
 
 def create_section_title(text: str) -> QLabel:

@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPlainTextEdit,
     QPushButton,
     QToolButton,
     QVBoxLayout,
@@ -27,6 +28,7 @@ STATUS_CHOICES = [
 ]
 ISO_FORMAT = "yyyy-MM-dd"
 PLATFORM_INPUT_WIDTH = 300
+NOTES_HEIGHT = 72
 
 
 class PlaythroughForm(QFrame):
@@ -93,6 +95,12 @@ class PlaythroughForm(QFrame):
         for column in range(3):
             numbers.setColumnStretch(column, 1)
 
+        self.notes_input = QPlainTextEdit()
+        self.notes_input.setObjectName("notesInput")
+        self.notes_input.setPlaceholderText("Es. completato al 100%, solo storia principale, giocato online…")
+        self.notes_input.setFixedHeight(NOTES_HEIGHT)
+        self.notes_input.setTabChangesFocus(True)
+
         self.error_label = QLabel()
         self.error_label.setObjectName("formError")
         self.error_label.setWordWrap(True)
@@ -120,6 +128,9 @@ class PlaythroughForm(QFrame):
         layout.addLayout(status_row)
         layout.addSpacing(10)
         layout.addLayout(numbers)
+        layout.addSpacing(10)
+        layout.addWidget(create_caption("Note (facoltative)"))
+        layout.addWidget(self.notes_input)
         layout.addWidget(self.error_label)
         layout.addSpacing(6)
         layout.addLayout(actions)
@@ -150,6 +161,7 @@ class PlaythroughForm(QFrame):
 
         self.status_buttons.button(0).setChecked(True)
         self.hours_input.set_value(0)
+        self.notes_input.clear()
         today = QDate.currentDate()
         for date_input in (self.start_date_input, self.completion_date_input):
             date_input.setMaximumDate(today)
@@ -165,6 +177,7 @@ class PlaythroughForm(QFrame):
         statuses = [status for status, _ in STATUS_CHOICES]
         self.status_buttons.button(statuses.index(playthrough.status)).setChecked(True)
         self.hours_input.set_value(playthrough.hours_played)
+        self.notes_input.setPlainText(playthrough.notes)
         if playthrough.start_date is not None:
             self.start_date_input.setDate(QDate.fromString(playthrough.start_date, ISO_FORMAT))
         if playthrough.completion_date is not None:
@@ -229,7 +242,14 @@ class PlaythroughForm(QFrame):
             self.error_label.show()
             return
         self.submitted.emit(
-            Playthrough(platform, self.selected_status(), self.hours_input.value(), start_date, completion_date)
+            Playthrough(
+                platform,
+                self.selected_status(),
+                self.hours_input.value(),
+                start_date,
+                completion_date,
+                self.notes_input.toPlainText().strip(),
+            )
         )
 
 

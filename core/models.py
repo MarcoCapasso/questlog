@@ -5,12 +5,13 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Playthrough:
-    """Una partita a un gioco, su una piattaforma, con stato, ore e date."""
+    """Una partita a un gioco, su una piattaforma, con stato, ore, date e note libere."""
     platform: str
     status: str
     hours_played: float
     start_date: str | None = None
     completion_date: str | None = None
+    notes: str = ""
 
 
 @dataclass

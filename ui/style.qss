@@ -201,6 +201,45 @@ QToolButton#rowAction:hover {
     background-color: #2A2F35;
 }
 
+QFrame#playthroughRow[confirming="true"] {
+    border: 1px solid #6A2E2E;
+}
+
+QLabel#playthroughNotes {
+    color: #C2C8CF;
+    font-style: italic;
+    padding-top: 2px;
+}
+
+QLabel#confirmQuestion {
+    color: #FFA8A8;
+    font-weight: 600;
+    padding-right: 4px;
+}
+
+QPushButton#dangerButton {
+    background-color: #E5484D;
+    border: 1px solid #E5484D;
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
+QPushButton#dangerButton:hover {
+    background-color: #F2555A;
+}
+
+QPlainTextEdit#notesInput {
+    background-color: #1C2024;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 6px 8px;
+    color: #F1F3F5;
+}
+
+QPlainTextEdit#notesInput:focus {
+    border: 1px solid #4A5058;
+}
+
 QLabel#playthroughHours {
     font-size: 22px;
     font-weight: 800;
