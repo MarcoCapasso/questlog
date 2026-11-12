@@ -267,7 +267,7 @@ def wait_for_login_code(
             self.end_headers()
             self.wfile.write(page.encode("utf-8"))
 
-        def log_message(self, format: str, *args: object) -> None:
+        def log_message(self, format: str, *_args: object) -> None:
             """Niente log nel terminale a ogni richiesta."""
 
     try:
