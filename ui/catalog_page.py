@@ -125,12 +125,15 @@ class CatalogPage(QWidget):
         self.library_games: list[Game] = []
         self.sections_loaded = False
 
-        back_button = QPushButton("← Libreria")
-        back_button.setObjectName("backButton")
-        back_button.clicked.connect(self.back_requested.emit)
+        self.back_button = QPushButton()
+        self.back_button.setObjectName("backButton")
+        self.back_button.clicked.connect(self.back_requested.emit)
 
-        heading = QLabel("Aggiungi gioco")
-        heading.setObjectName("pageTitle")
+        self.heading = QLabel()
+        self.heading.setObjectName("pageTitle")
+        self.link_hint = QLabel()
+        self.link_hint.setObjectName("gameMeta")
+        self.link_hint.setWordWrap(True)
 
         self.search_box = QLineEdit()
         self.search_box.setObjectName("catalogSearch")
@@ -176,15 +179,20 @@ class CatalogPage(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(PAGE_MARGIN, 20, PAGE_MARGIN, 0)
         layout.setSpacing(12)
-        layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(heading)
+        layout.addWidget(self.back_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(self.heading)
+        layout.addWidget(self.link_hint)
         layout.addWidget(self.search_box)
         layout.addWidget(demo_notice)
         layout.addSpacing(12)
         layout.addWidget(scroll_area)
 
-    def start(self) -> None:
-        """Prepara la pagina quando viene aperta: legge la libreria e, la prima volta, carica le sezioni."""
+    def start(self, link_title: str | None = None) -> None:
+        """Prepara la pagina quando viene aperta: legge la libreria e, la prima volta, carica le sezioni.
+
+        Con link_title la pagina serve a collegare a IGDB un gioco già in libreria:
+        cambia titolo e testo del bottone indietro, e cerca subito quel titolo.
+        """
         self.library_games = self.repository.load_games()
         if not self.sections_loaded:
             self.sections_loaded = True
@@ -192,6 +200,17 @@ class CatalogPage(QWidget):
                 section.load(load_games)
         else:
             self.refresh_cards()
+
+        linking = link_title is not None
+        self.heading.setText("Collega a IGDB" if linking else "Aggiungi gioco")
+        self.back_button.setText("← Indietro" if linking else "← Libreria")
+        self.link_hint.setText(
+            f"Scegli il gioco che corrisponde a «{link_title}»: arriveranno copertina, descrizione e "
+            "screenshot, mentre le tue partite e il voto restano come sono."
+        )
+        self.link_hint.setVisible(linking)
+        self.search_box.setText(link_title or "")
+        self.run_search()
         self.search_box.setFocus()
 
     def refresh_cards(self) -> None:

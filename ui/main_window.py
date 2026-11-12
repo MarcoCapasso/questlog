@@ -37,13 +37,15 @@ class MainWindow(QMainWindow):
         self.catalog_page = CatalogPage(catalog, repository)
         self.game_page = GamePage(repository, catalog, translator)
         self.page_before_game: QWidget = self.library_page
+        self.linking = False
 
         self.library_page.add_requested.connect(self.show_catalog_page)
         self.library_page.game_selected.connect(self.show_library_game)
-        self.catalog_page.back_requested.connect(self.show_library_page)
+        self.catalog_page.back_requested.connect(self.go_back_from_catalog)
         self.catalog_page.game_selected.connect(self.show_catalog_game)
         self.game_page.back_requested.connect(self.go_back_from_game)
         self.game_page.library_changed.connect(self.library_page.refresh)
+        self.game_page.link_requested.connect(self.show_link_catalog)
 
         self.pages = QStackedWidget()
         self.nav_buttons = QButtonGroup(self)
@@ -94,11 +96,31 @@ class MainWindow(QMainWindow):
 
     def show_catalog_page(self) -> None:
         """Apre il catalogo per scegliere un gioco da aggiungere."""
+        self.linking = False
         self.catalog_page.start()
         self.show_page(self.catalog_page)
 
+    def show_link_catalog(self, title: str) -> None:
+        """Apre il catalogo per scegliere a quale gioco IGDB collegare il gioco mostrato."""
+        self.linking = True
+        self.catalog_page.start(link_title=title)
+        self.show_page(self.catalog_page)
+
+    def go_back_from_catalog(self) -> None:
+        """Dal catalogo si torna al gioco se lo si stava collegando, altrimenti alla libreria."""
+        if self.linking:
+            self.linking = False
+            self.show_page(self.game_page)
+        else:
+            self.show_library_page()
+
     def show_catalog_game(self, catalog_game: CatalogGame) -> None:
-        """Apre la pagina di un gioco scelto nel catalogo."""
+        """Apre la pagina di un gioco scelto nel catalogo, oppure lo usa per collegare il gioco mostrato."""
+        if self.linking:
+            self.linking = False
+            self.game_page.link_game(catalog_game)
+            self.show_page(self.game_page)
+            return
         self.page_before_game = self.catalog_page
         self.game_page.show_catalog_game(catalog_game)
         self.show_page(self.game_page)

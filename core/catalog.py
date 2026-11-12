@@ -126,6 +126,22 @@ def link_to_catalog(game: Game, catalog_game: CatalogGame) -> None:
     game.cover_url = catalog_game.cover_url
 
 
+def link_library_game(games: list[Game], game: Game, catalog_game: CatalogGame) -> str | None:
+    """Collega un gioco già in libreria al gioco IGDB scelto; restituisce un messaggio d'errore oppure None.
+
+    Il titolo diventa quello ufficiale di IGDB, a meno che un altro gioco della libreria non lo usi già.
+    Le partite e il voto restano quelli del gioco.
+    """
+    for other in games:
+        if other is not game and other.igdb_id == catalog_game.igdb_id:
+            return f"«{catalog_game.title}» è già collegato a «{other.title}» nella tua libreria."
+    title_taken = any(other is not game and other.title.lower() == catalog_game.title.lower() for other in games)
+    if not title_taken:
+        game.title = catalog_game.title
+    link_to_catalog(game, catalog_game)
+    return None
+
+
 def game_from_catalog(catalog_game: CatalogGame) -> Game:
     """Restituisce un nuovo gioco da mettere in libreria, ancora da giocare."""
     game = Game(catalog_game.title)

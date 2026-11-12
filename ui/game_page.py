@@ -13,7 +13,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.catalog import CatalogGame, GameCatalog, find_library_game, game_from_catalog, link_to_catalog
+from core.catalog import (
+    CatalogGame,
+    GameCatalog,
+    find_library_game,
+    game_from_catalog,
+    link_library_game,
+    link_to_catalog,
+)
 from core.library import (
     calculate_total_hours,
     find_game_index_by_title,
@@ -38,7 +45,7 @@ from ui.widgets import ConfirmSwitch, RatingInput
 PAGE_MARGIN = 40
 COVER_SIZE = QSize(210, 280)
 SUMMARY_WIDTH = 680
-NOT_LINKED_HINT = "Cercalo in Aggiungi gioco per collegarlo a IGDB e vedere copertina e descrizione."
+NOT_LINKED_HINT = "Non collegato a IGDB: collegalo per avere copertina, descrizione e screenshot."
 
 
 class GamePage(QWidget):
@@ -46,6 +53,7 @@ class GamePage(QWidget):
 
     back_requested = Signal()
     library_changed = Signal()
+    link_requested = Signal(str)
 
     def __init__(self, repository: GameRepository, catalog: GameCatalog, translator: Translator) -> None:
         super().__init__()
@@ -98,6 +106,9 @@ class GamePage(QWidget):
         actions.setSpacing(12)
         actions.addWidget(self.add_button)
         actions.addWidget(self.in_library_chip)
+        self.link_button = QPushButton("Collega a IGDB")
+        self.link_button.clicked.connect(self.request_link)
+        actions.addWidget(self.link_button)
         actions.addStretch()
         actions.addWidget(self.rating_input)
 
@@ -106,6 +117,11 @@ class GamePage(QWidget):
         info.addStretch()
         info.addWidget(self.title_label)
         info.addWidget(self.meta_label)
+        self.link_error = QLabel()
+        self.link_error.setObjectName("formError")
+        self.link_error.setWordWrap(True)
+        self.link_error.hide()
+        info.addWidget(self.link_error)
         info.addWidget(self.platforms_label)
         info.addSpacing(6)
         info.addLayout(actions)
@@ -197,6 +213,7 @@ class GamePage(QWidget):
     def start_view(self) -> None:
         """Riparte dall'alto della pagina, senza sfondo e immagini finché non arrivano i dettagli."""
         self.details_loaded = False
+        self.link_error.hide()
         self.close_playthrough_form()
         self.remove_switch.cancel()
         self.backdrop.set_url(None)
@@ -260,6 +277,7 @@ class GamePage(QWidget):
         self.summary_label.setVisible(summary != "")
 
         in_library = self.game is not None
+        self.link_button.setVisible(self.game is not None and self.game.igdb_id is None)
         self.add_button.setVisible(not in_library)
         self.in_library_chip.setVisible(in_library)
         self.rating_input.setVisible(self.game is not None and not is_backlog(self.game))
@@ -366,6 +384,25 @@ class GamePage(QWidget):
         remove_playthrough(self.game, playthrough_index)
         self.save()
         self.update_view()
+
+    def request_link(self) -> None:
+        """Chiede alla finestra di aprire il catalogo per scegliere il gioco IGDB corrispondente."""
+        if self.game is not None:
+            self.link_requested.emit(self.game.title)
+
+    def link_game(self, catalog_game: CatalogGame) -> None:
+        """Collega il gioco mostrato a quello scelto nel catalogo e scarica copertina, descrizione e immagini."""
+        if self.game is None:
+            return
+        error = link_library_game(self.games, self.game, catalog_game)
+        self.link_error.setText(error or "")
+        self.link_error.setVisible(error is not None)
+        if error is not None:
+            return
+        self.save()
+        self.catalog_game = catalog_game
+        self.start_view()
+        self.load_details(catalog_game.igdb_id)
 
     def remove_from_library(self) -> None:
         """Toglie il gioco dalla libreria con tutte le partite.
