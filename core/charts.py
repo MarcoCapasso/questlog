@@ -30,7 +30,7 @@ STATUS_NAMES = {
 
 @dataclass
 class ChartTheme:
-    """Colori dei grafici: uno chiaro per i file PNG e uno scuro per l'app."""
+    """Colori dei grafici: tenerli insieme permette di creare altri temi senza toccare le funzioni."""
     background: str
     text: str
     muted_text: str
@@ -48,15 +48,6 @@ LIGHT_THEME = ChartTheme(
     bar="#3A5C86",
     highlight="#101214",
     status_colors={"playing": "#2E9E5B", "completed": "#3A5C86", "dropped": "#D9822B"},
-)
-DARK_THEME = ChartTheme(
-    background="#181B1F",
-    text="#F1F3F5",
-    muted_text="#AEB5BD",
-    grid="#2A2F35",
-    bar="#8FB4E3",
-    highlight="#E3B873",
-    status_colors={"playing": "#8FE0A8", "completed": "#F1F3F5", "dropped": "#F2B48C"},
 )
 
 

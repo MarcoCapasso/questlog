@@ -1,7 +1,5 @@
 """Nomi delle piattaforme: un solo nome per ogni console, qualunque sia il modo in cui è stato scritto."""
 
-from core.models import Game
-
 PLATFORM_ALIASES = {
     "PC": ["pc", "windows", "pc (microsoft windows)", "microsoft windows"],
     "Mac": ["mac", "macos", "mac os"],
@@ -58,15 +56,3 @@ def normalize_platforms(platforms: list[str]) -> list[str]:
         if name not in result:
             result.append(name)
     return result
-
-
-def normalize_library_platforms(games: list[Game]) -> int:
-    """Normalizza le piattaforme di tutte le partite della libreria; restituisce quante sono cambiate."""
-    changed = 0
-    for game in games:
-        for playthrough in game.playthroughs:
-            name = normalize_platform(playthrough.platform)
-            if name != playthrough.platform:
-                playthrough.platform = name
-                changed += 1
-    return changed

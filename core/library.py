@@ -1,6 +1,5 @@
 """Regole e ricerche sulla libreria, senza interazione con l'utente."""
 
-import math
 from datetime import date
 
 from core.models import Game, Playthrough
@@ -111,11 +110,6 @@ def is_valid_rating(rating: float) -> bool:
     return 1 <= rating <= MAX_RATING and float(rating).is_integer()
 
 
-def convert_rating_to_five_stars(rating: float) -> int:
-    """Converte un vecchio voto da 1 a 10 in stelle da 1 a 5, arrotondando per eccesso (9 → 5, 7 → 4)."""
-    return math.ceil(rating / 2)
-
-
 def is_valid_date_order(start_date: str | None, completion_date: str | None) -> bool:
     """Indica se il completamento non precede l'inizio; sempre vero se manca una delle due date."""
     if start_date is None or completion_date is None:
@@ -170,16 +164,6 @@ def playthrough_statuses(game: Game) -> list[str]:
         if has_playthrough_with_status(game, status):
             statuses.append(status)
     return statuses
-
-
-def validate_new_title(games: list[Game], title: str) -> str | None:
-    """Restituisce il messaggio d'errore per il titolo di un nuovo gioco, oppure None se è valido."""
-    clean_title = title.strip()
-    if clean_title == "":
-        return "Il titolo non può essere vuoto."
-    if find_game_index_by_title(games, clean_title) is not None:
-        return f"'{clean_title}' è già nella libreria."
-    return None
 
 
 def known_platforms(games: list[Game]) -> list[str]:

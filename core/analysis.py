@@ -38,11 +38,6 @@ def hours_per_game(df: pd.DataFrame) -> pd.Series:
     return playthrough_rows(df).groupby("title")["hours_played"].sum()
 
 
-def median_hours_per_game(df: pd.DataFrame) -> float:
-    """Restituisce la mediana delle ore totali dei giochi giocati."""
-    return float(hours_per_game(df).median())
-
-
 def days_to_complete(df: pd.DataFrame) -> pd.Series:
     """Restituisce i giorni impiegati per ogni partita completata che ha entrambe le date."""
     completed = df[df["status"] == "completed"]

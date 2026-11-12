@@ -2,7 +2,6 @@ from core.library import (
     BACKLOG,
     apply_status_change,
     calculate_total_hours,
-    convert_rating_to_five_stars,
     count_by_summary_status,
     current_playthrough,
     filter_games,
@@ -22,7 +21,6 @@ from core.library import (
     replace_playthrough,
     summary_status,
     validate_new_playthrough,
-    validate_new_title,
 )
 from core.models import Game, Playthrough
 
@@ -234,33 +232,12 @@ def test_playthrough_statuses_is_empty_for_backlog_game():
     assert playthrough_statuses(make_game("Hades")) == []
 
 
-def test_validate_new_title_rejects_empty_title():
-    assert validate_new_title([], "   ") == "Il titolo non può essere vuoto."
-
-
-def test_validate_new_title_rejects_existing_title_ignoring_case():
-    games = [make_game("Hades")]
-
-    assert validate_new_title(games, "hades") == "'hades' è già nella libreria."
-
-
-def test_validate_new_title_accepts_new_title():
-    assert validate_new_title([make_game("Hades")], "Celeste") is None
-
-
 def test_rating_must_be_a_whole_number_from_1_to_5():
     assert is_valid_rating(1)
     assert is_valid_rating(5)
     assert not is_valid_rating(3.5)
     assert not is_valid_rating(0)
     assert not is_valid_rating(6)
-
-
-def test_old_ratings_round_up_to_five_stars():
-    assert convert_rating_to_five_stars(10) == 5
-    assert convert_rating_to_five_stars(9) == 5
-    assert convert_rating_to_five_stars(8) == 4
-    assert convert_rating_to_five_stars(1) == 1
 
 
 def test_known_platforms_lists_each_platform_once_in_alphabetical_order():
