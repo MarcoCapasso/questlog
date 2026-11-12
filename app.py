@@ -6,12 +6,13 @@ from PySide6.QtCore import QLocale
 from PySide6.QtWidgets import QApplication
 
 from core.catalog import FakeCatalog, GameCatalog
-from core.config import load_deepl_api_key, load_igdb_credentials
+from core.cloud import AuthService, create_supabase_client
+from core.config import load_deepl_api_key, load_igdb_credentials, load_supabase_settings
 from core.igdb import IgdbCatalog
 from core.repository import JsonGameRepository
 from core.translation import DeepLTranslator, NoTranslator, Translator
 from ui.main_window import MainWindow
-from ui.theme import load_stylesheet
+from ui.theme import load_fonts, load_stylesheet
 
 
 def create_catalog() -> GameCatalog:
@@ -31,13 +32,23 @@ def create_translator() -> Translator:
     return DeepLTranslator(api_key)
 
 
+def create_auth() -> AuthService | None:
+    """Restituisce il servizio di login se Supabase è configurato nel file .env, altrimenti None."""
+    settings = load_supabase_settings()
+    if settings is None:
+        return None
+    url, key = settings
+    return AuthService(create_supabase_client(url, key))
+
+
 def main() -> None:
     """Crea l'applicazione, mostra la finestra principale e avvia il ciclo di eventi."""
     QLocale.setDefault(QLocale(QLocale.Language.Italian, QLocale.Country.Italy))
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    load_fonts()
     app.setStyleSheet(load_stylesheet())
-    window = MainWindow(JsonGameRepository(), create_catalog(), create_translator())
+    window = MainWindow(JsonGameRepository(), create_catalog(), create_translator(), create_auth())
     window.show()
     sys.exit(app.exec())
 

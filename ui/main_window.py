@@ -1,5 +1,7 @@
 """Finestra principale di Questlog."""
 
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -13,9 +15,11 @@ from PySide6.QtWidgets import (
 )
 
 from core.catalog import CatalogGame, GameCatalog
+from core.cloud import AuthService, CloudUser
 from core.models import Game
 from core.repository import GameRepository
 from core.translation import NoTranslator, Translator
+from ui.auth_page import AuthPage
 from ui.avatar import AvatarButton
 from ui.catalog_page import CatalogPage
 from ui.data_page import DataPage
@@ -24,17 +28,26 @@ from ui.home_page import HomePage
 from ui.library_page import LibraryPage
 from ui.settings_page import SettingsPage
 from ui.statistics_page import StatisticsPage
+from ui.tasks import run_in_background
 
 HOME_NAV_INDEX = 0
 LIBRARY_NAV_INDEX = 1
 STATISTICS_NAV_INDEX = 2
+STATUS_DURATION_MS = 6000
 
 
 class MainWindow(QMainWindow):
     """La finestra principale: barra di navigazione in alto e, sotto, una pagina alla volta."""
 
-    def __init__(self, repository: GameRepository, catalog: GameCatalog, translator: Translator) -> None:
+    def __init__(
+        self,
+        repository: GameRepository,
+        catalog: GameCatalog,
+        translator: Translator,
+        auth: AuthService | None = None,
+    ) -> None:
         super().__init__()
+        self.auth = auth
         self.setWindowTitle("Questlog")
         screen_area = self.screen().availableGeometry()
         self.resize(int(screen_area.width() * 0.7), int(screen_area.height() * 0.75))
@@ -49,6 +62,9 @@ class MainWindow(QMainWindow):
         self.data_page.library_replaced.connect(self.home_page.refresh)
         self.catalog_page = CatalogPage(catalog, repository)
         self.game_page = GamePage(repository, catalog, translator)
+        self.auth_page = AuthPage(auth) if auth is not None else None
+        if self.auth_page is not None:
+            self.auth_page.signed_in.connect(self.on_signed_in)
         self.page_before_game: QWidget = self.library_page
         self.linking = False
 
@@ -88,12 +104,26 @@ class MainWindow(QMainWindow):
             header_layout.addWidget(button)
             self.pages.addWidget(page)
         header_layout.addStretch()
+        self.status_label = QLabel()
+        self.status_label.setObjectName("statusMessage")
+        self.status_label.hide()
+        self.status_timer = QTimer(self)
+        self.status_timer.setSingleShot(True)
+        self.status_timer.timeout.connect(self.status_label.hide)
+        header_layout.addWidget(self.status_label)
+        header_layout.addSpacing(12)
         self.avatar = AvatarButton()
         self.avatar.settings_requested.connect(lambda: self.show_page(self.settings_page))
         self.avatar.data_requested.connect(self.show_data_page)
+        self.avatar.login_requested.connect(self.show_auth_page)
+        self.avatar.logout_requested.connect(self.start_logout)
+        self.avatar.set_login_available(auth is not None)
         header_layout.addWidget(self.avatar)
-        for extra_page in (self.catalog_page, self.game_page, self.settings_page, self.data_page):
-            self.pages.addWidget(extra_page)
+        if auth is not None:
+            run_in_background(auth.current_user, self.on_signed_in_quietly, self.ignore_error)
+        for extra_page in (self.catalog_page, self.game_page, self.settings_page, self.data_page, self.auth_page):
+            if extra_page is not None:
+                self.pages.addWidget(extra_page)
 
         self.nav_buttons.idClicked.connect(self.show_nav_page)
         self.nav_buttons.button(HOME_NAV_INDEX).setChecked(True)
@@ -107,14 +137,20 @@ class MainWindow(QMainWindow):
         central_layout.addWidget(self.pages)
         self.setCentralWidget(central)
 
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Chiudendo la finestra smette di aspettare il browser (Google o link di conferma), così l'app esce subito."""
+        if self.auth is not None:
+            self.auth.cancel_waiting()
+        super().closeEvent(event)
+
     def show_page(self, page: QWidget) -> None:
         """Mostra una pagina ed evidenzia il bottone in alto giusto.
 
         Il gioco evidenzia il bottone della pagina da cui è stato aperto, il catalogo quello della Libreria.
-        Impostazioni e dati si aprono dall'avatar: nessun bottone resta evidenziato.
+        Impostazioni, dati e accesso si aprono dall'avatar: nessun bottone resta evidenziato.
         """
         self.pages.setCurrentWidget(page)
-        if page in (self.settings_page, self.data_page):
+        if page in (self.settings_page, self.data_page, self.auth_page):
             self.nav_buttons.setExclusive(False)
             for button in self.nav_buttons.buttons():
                 button.setChecked(False)
@@ -123,6 +159,42 @@ class MainWindow(QMainWindow):
         section = self.page_before_game if page is self.game_page else page
         nav_index = HOME_NAV_INDEX if section is self.home_page else LIBRARY_NAV_INDEX
         self.nav_buttons.button(nav_index).setChecked(True)
+
+    def show_status(self, text: str) -> None:
+        """Mostra un breve messaggio in alto a destra, che sparisce da solo dopo qualche secondo."""
+        self.status_label.setText(text)
+        self.status_label.show()
+        self.status_timer.start(STATUS_DURATION_MS)
+
+    def show_auth_page(self) -> None:
+        """Apre la pagina Accedi / Registrati."""
+        if self.auth_page is not None:
+            self.show_page(self.auth_page)
+
+    def on_signed_in(self, user: CloudUser) -> None:
+        """Login riuscito: aggiorna l'avatar, saluta e torna alla Home."""
+        self.avatar.set_user(user)
+        self.show_status(f"Ciao, {user.name.split()[0]}!")
+        self.home_page.refresh()
+        self.show_page(self.home_page)
+
+    def on_signed_in_quietly(self, user: CloudUser | None) -> None:
+        """All'avvio: se c'era una sessione salvata, l'utente è già dentro, senza messaggi."""
+        self.avatar.set_user(user)
+
+    def start_logout(self) -> None:
+        """Esce dall'account in background."""
+        if self.auth is None:
+            return
+        run_in_background(self.auth.sign_out, self.on_signed_out, self.on_signed_out)
+
+    def on_signed_out(self, _result: object = None) -> None:
+        """Dopo il logout (anche se il server non ha risposto, la sessione locale è cancellata)."""
+        self.avatar.set_user(None)
+        self.show_status("Sei uscito dall'account.")
+
+    def ignore_error(self, _message: str) -> None:
+        """All'avvio, senza rete, si resta semplicemente fuori dall'account."""
 
     def show_data_page(self) -> None:
         """Apre la pagina di import ed export, ripulita da messaggi vecchi."""
