@@ -1,7 +1,7 @@
 """Avatar in alto a destra con il menu del profilo: accesso, impostazioni, dati e uscita dall'account."""
 
 from PySide6.QtCore import QPoint, QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QPainter, QPixmap
 from PySide6.QtWidgets import QMenu, QToolButton, QWidget
 
 from core.cloud import CloudUser
@@ -44,6 +44,9 @@ class AvatarButton(QToolButton):
         self.account_separator = self.profile_menu.addSeparator()
         self.profile_menu.addAction("Impostazioni", self.settings_requested.emit)
         self.data_action = self.profile_menu.addAction("Importa ed esporta", self.data_requested.emit)
+        self.fullscreen_action = self.profile_menu.addAction("Schermo intero")
+        self.fullscreen_action.setCheckable(True)
+        self.fullscreen_action.setShortcut(QKeySequence(Qt.Key.Key_F11))
         self.logout_separator = self.profile_menu.addSeparator()
         self.logout_action = self.profile_menu.addAction("Esci", self.logout_requested.emit)
         self.set_user(None)

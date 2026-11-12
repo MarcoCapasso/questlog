@@ -133,7 +133,7 @@ def create_figure(theme: ChartTheme, grid_axis: Literal["x", "y"] = "y") -> tupl
 
 def save_figure(figure: Figure, chart_file: Path) -> None:
     """Salva la Figure come immagine PNG nella cartella dei dati."""
-    DATA_DIR.mkdir(exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     figure.savefig(chart_file)
 
 

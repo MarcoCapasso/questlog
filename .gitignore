@@ -220,3 +220,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 data/
+
+# Impostazioni pubbliche generate dallo script di build per l'exe
+app_settings.json
