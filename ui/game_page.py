@@ -236,7 +236,11 @@ class GamePage(QWidget):
         run_in_background(fetch_details, self.on_details_loaded, self.ignore_error)
 
     def on_details_loaded(self, details: CatalogGame | None) -> None:
-        """Completa la pagina con sfondo, immagini e descrizione, se riguardano ancora il gioco mostrato."""
+        """Completa la pagina con sfondo, immagini e descrizione, se riguardano ancora il gioco mostrato.
+
+        Se nel frattempo il pannello della partita era aperto (per esempio da "Aggiorna la partita" nella Home),
+        lo riapre: ora conosce le piattaforme del gioco e può mostrarle come pillole.
+        """
         shown_id = self.catalog_game.igdb_id if self.catalog_game is not None else None
         if self.game is not None and self.game.igdb_id is not None:
             shown_id = self.game.igdb_id
@@ -247,7 +251,11 @@ class GamePage(QWidget):
         self.backdrop.set_url(details.backdrop_url)
         self.carousel.set_images(details.screenshot_urls)
         self.screenshots_section.setVisible(bool(details.screenshot_urls))
+        form_was_open = self.playthrough_form.isVisible()
+        editing_index = self.editing_index
         self.update_view()
+        if form_was_open:
+            self.open_playthrough_form(editing_index)
 
     def ignore_error(self, _message: str) -> None:
         """Senza internet la pagina resta valida, solo senza descrizione: l'errore si può ignorare."""

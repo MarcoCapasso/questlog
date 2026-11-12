@@ -12,6 +12,7 @@ from core.analysis import (
     hours_by_platform,
     hours_per_game,
     playthroughs_by_status,
+    summarize_library,
 )
 from core.models import Game, Playthrough
 
@@ -135,3 +136,27 @@ def test_average_rating_is_nan_when_no_game_is_rated():
     df = make_df(Game("GTA VI"))
 
     assert math.isnan(average_rating(df))
+
+def test_summarize_library_without_data_uses_none():
+    summary = summarize_library([Game("Celeste")])
+
+    assert summary.total_hours == 0
+    assert summary.completed_playthroughs == 0
+    assert summary.completion_rate is None
+    assert summary.average_rating is None
+    assert summary.median_days_to_complete is None
+
+
+def test_summarize_library_counts_completed_and_hours():
+    games = [
+        Game("A", 4, [make_playthrough("completed", 10, start_date="2026-01-01", completion_date="2026-01-11")]),
+        Game("B", 2, [make_playthrough("dropped", 5)]),
+    ]
+
+    summary = summarize_library(games)
+
+    assert summary.total_hours == 15
+    assert summary.completed_playthroughs == 1
+    assert summary.completion_rate == 0.5
+    assert summary.average_rating == 3
+    assert summary.median_days_to_complete == 10

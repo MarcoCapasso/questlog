@@ -202,4 +202,43 @@ def validate_new_playthrough(
         return "Una partita completata deve avere delle ore."
     if not is_valid_date_order(start_date, completion_date):
         return "La data di completamento non può precedere la data di inizio."
-    return None
+    return None
+
+def last_activity_date(game: Game) -> str | None:
+    """Restituisce la data più recente tra inizi e completamenti delle partite, oppure None se non ce ne sono.
+
+    Le date sono stringhe ISO (AAAA-MM-GG): in questo formato l'ordine alfabetico è anche quello cronologico,
+    quindi max() funziona direttamente sulle stringhe.
+    """
+    dates = [
+        date_text
+        for playthrough in game.playthroughs
+        for date_text in (playthrough.start_date, playthrough.completion_date)
+        if date_text is not None
+    ]
+    return max(dates) if dates else None
+
+
+def recently_played(games: list[Game], limit: int) -> list[Game]:
+    """Restituisce al massimo limit giochi con almeno una data, dal più recente."""
+    dated_games = [game for game in games if last_activity_date(game) is not None]
+    dated_games.sort(key=lambda game: last_activity_date(game) or "", reverse=True)
+    return dated_games[:limit]
+
+
+def current_playthrough(games: list[Game]) -> tuple[Game, int] | None:
+    """Restituisce il gioco e l'indice della partita in corso iniziata più di recente, oppure None.
+
+    Le partite in corso senza data di inizio contano come le più vecchie.
+    """
+    best: tuple[Game, int] | None = None
+    best_date = ""
+    for game in games:
+        for index, playthrough in enumerate(game.playthroughs):
+            if playthrough.status != "playing":
+                continue
+            start_date = playthrough.start_date or ""
+            if best is None or start_date > best_date:
+                best = (game, index)
+                best_date = start_date
+    return best

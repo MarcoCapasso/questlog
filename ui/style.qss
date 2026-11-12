@@ -605,3 +605,41 @@ QToolButton#ratingStar {
     border: none;
     padding: 2px;
 }
+
+/* Home */
+
+QLabel#heroEyebrow {
+    color: #8FE0A8;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+QPushButton#accentButton {
+    background-color: #8FE0A8;
+    border: 1px solid #8FE0A8;
+    color: #0E2415;
+    font-weight: 700;
+}
+
+QPushButton#accentButton:hover {
+    background-color: #A6EBBB;
+}
+
+QLabel#statsLine {
+    color: #AEB5BD;
+    font-size: 15px;
+    padding: 16px 0px;
+    border-top: 1px solid #1F2327;
+    border-bottom: 1px solid #1F2327;
+}
+
+QPushButton#textButton {
+    background: transparent;
+    border: none;
+    color: #C2C8CF;
+    padding: 4px 0px;
+}
+
+QPushButton#textButton:hover {
+    color: #FFFFFF;
+}

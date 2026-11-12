@@ -1,6 +1,7 @@
 """Statistiche sulla libreria calcolate con pandas."""
 
 import math
+from dataclasses import dataclass
 
 import pandas as pd
 
@@ -68,3 +69,31 @@ def average_rating(df: pd.DataFrame) -> float:
     """Restituisce la media dei voti dei giochi votati; NaN se nessun gioco ha un voto."""
     ratings = df.drop_duplicates(subset="title")["rating"]
     return float(ratings.mean())
+
+
+@dataclass
+class LibrarySummary:
+    """I numeri principali della libreria, già pronti da mostrare; None dove non c'è abbastanza da calcolare."""
+    total_hours: float
+    completed_playthroughs: int
+    completion_rate: float | None
+    average_rating: float | None
+    median_days_to_complete: float | None
+
+
+def summarize_library(games: list[Game]) -> LibrarySummary:
+    """Restituisce il riepilogo della libreria, trasformando i NaN di pandas in None."""
+    df = games_to_dataframe(games)
+    statuses = playthroughs_by_status(df)
+    return LibrarySummary(
+        total_hours=float(hours_by_platform(df).sum()),
+        completed_playthroughs=int(statuses.get("completed", 0)),
+        completion_rate=nan_to_none(completion_rate(df)),
+        average_rating=nan_to_none(average_rating(df)),
+        median_days_to_complete=nan_to_none(float(days_to_complete(df).median())),
+    )
+
+
+def nan_to_none(value: float) -> float | None:
+    """Restituisce None al posto di NaN, il valore "non disponibile" di pandas."""
+    return None if math.isnan(value) else value

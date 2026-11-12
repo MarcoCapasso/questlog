@@ -4,6 +4,7 @@ from core.library import (
     calculate_total_hours,
     convert_rating_to_five_stars,
     count_by_summary_status,
+    current_playthrough,
     filter_games,
     find_game_index_by_title,
     find_game_indices_by_status,
@@ -14,7 +15,9 @@ from core.library import (
     is_valid_date_order,
     is_valid_rating,
     known_platforms,
+    last_activity_date,
     playthrough_statuses,
+    recently_played,
     remove_playthrough,
     replace_playthrough,
     summary_status,
@@ -284,3 +287,32 @@ def test_validate_new_playthrough_rejects_completion_before_start():
 
 def test_validate_new_playthrough_accepts_playing_with_zero_hours():
     assert validate_new_playthrough("playing", 0, "2026-01-01", None) is None
+
+
+def test_last_activity_date_uses_latest_start_or_completion():
+    game = Game("GTA V", playthroughs=[
+        Playthrough("PS4", "completed", 100, "2017-12-15", "2018-03-01"),
+        Playthrough("PS5", "playing", 5, "2026-10-01"),
+    ])
+
+    assert last_activity_date(game) == "2026-10-01"
+    assert last_activity_date(Game("Celeste")) is None
+
+
+def test_recently_played_sorts_by_latest_activity_and_skips_undated():
+    old = Game("Vecchio", playthroughs=[Playthrough("PC", "completed", 10, "2020-01-01", "2020-02-01")])
+    new = Game("Nuovo", playthroughs=[Playthrough("PC", "playing", 1, "2026-11-01")])
+    undated = Game("Senza date", playthroughs=[Playthrough("PC", "playing", 1)])
+
+    assert recently_played([old, undated, new], limit=5) == [new, old]
+
+
+def test_current_playthrough_is_latest_started_playing_one():
+    gta = Game("GTA V", playthroughs=[
+        Playthrough("PS4", "completed", 100, "2017-12-15", "2018-03-01"),
+        Playthrough("PS5", "playing", 5, "2026-10-01"),
+    ])
+    zelda = Game("Zelda", playthroughs=[Playthrough("Switch", "playing", 2, "2026-11-05")])
+
+    assert current_playthrough([gta, zelda]) == (zelda, 0)
+    assert current_playthrough([Game("Celeste")]) is None

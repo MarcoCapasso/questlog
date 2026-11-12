@@ -18,8 +18,10 @@ from core.repository import GameRepository
 from core.translation import Translator
 from ui.catalog_page import CatalogPage
 from ui.game_page import GamePage
+from ui.home_page import HomePage
 from ui.library_page import LibraryPage
 
+HOME_NAV_INDEX = 0
 LIBRARY_NAV_INDEX = 1
 
 
@@ -33,18 +35,23 @@ class MainWindow(QMainWindow):
         self.resize(int(screen_area.width() * 0.7), int(screen_area.height() * 0.75))
         self.setMinimumSize(960, 600)
 
+        self.home_page = HomePage(repository, catalog)
         self.library_page = LibraryPage(repository)
         self.catalog_page = CatalogPage(catalog, repository)
         self.game_page = GamePage(repository, catalog, translator)
         self.page_before_game: QWidget = self.library_page
         self.linking = False
 
+        self.home_page.game_selected.connect(self.show_library_game)
+        self.home_page.update_requested.connect(self.show_playthrough_update)
+        self.home_page.library_requested.connect(self.show_library_page)
         self.library_page.add_requested.connect(self.show_catalog_page)
         self.library_page.game_selected.connect(self.show_library_game)
         self.catalog_page.back_requested.connect(self.go_back_from_catalog)
         self.catalog_page.game_selected.connect(self.show_catalog_game)
         self.game_page.back_requested.connect(self.go_back_from_game)
         self.game_page.library_changed.connect(self.library_page.refresh)
+        self.game_page.library_changed.connect(self.home_page.refresh)
         self.game_page.link_requested.connect(self.show_link_catalog)
 
         self.pages = QStackedWidget()
@@ -59,7 +66,7 @@ class MainWindow(QMainWindow):
         header_layout.addWidget(logo)
 
         pages = [
-            ("Home", create_placeholder_page("Home")),
+            ("Home", self.home_page),
             ("Libreria", self.library_page),
             ("Statistiche", create_placeholder_page("Statistiche")),
         ]
@@ -75,7 +82,8 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.game_page)
 
         self.nav_buttons.idClicked.connect(self.pages.setCurrentIndex)
-        self.nav_buttons.button(0).setChecked(True)
+        self.nav_buttons.button(HOME_NAV_INDEX).setChecked(True)
+        self.home_page.refresh()
 
         central = QWidget()
         central_layout = QVBoxLayout(central)
@@ -86,9 +94,15 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
 
     def show_page(self, page: QWidget) -> None:
-        """Mostra una pagina; quelle senza bottone in alto (catalogo e gioco) tengono evidenziato 'Libreria'."""
+        """Mostra una pagina ed evidenzia il bottone in alto giusto.
+
+        Catalogo e gioco non hanno un bottone: il gioco evidenzia quello della pagina da cui è stato aperto,
+        il catalogo quello della Libreria.
+        """
         self.pages.setCurrentWidget(page)
-        self.nav_buttons.button(LIBRARY_NAV_INDEX).setChecked(True)
+        section = self.page_before_game if page is self.game_page else page
+        nav_index = HOME_NAV_INDEX if section is self.home_page else LIBRARY_NAV_INDEX
+        self.nav_buttons.button(nav_index).setChecked(True)
 
     def show_library_page(self) -> None:
         """Torna alla libreria."""
@@ -126,10 +140,16 @@ class MainWindow(QMainWindow):
         self.show_page(self.game_page)
 
     def show_library_game(self, game: Game) -> None:
-        """Apre la pagina di un gioco cliccato in libreria."""
-        self.page_before_game = self.library_page
+        """Apre la pagina di un gioco della libreria; "Indietro" riporta alla pagina da cui lo si è aperto."""
+        current_page = self.pages.currentWidget()
+        self.page_before_game = self.home_page if current_page is self.home_page else self.library_page
         self.game_page.show_library_game(game)
         self.show_page(self.game_page)
+
+    def show_playthrough_update(self, game: Game, playthrough_index: int) -> None:
+        """Dalla Home: apre il gioco in corso con la sua partita già aperta in modifica."""
+        self.show_library_game(game)
+        self.game_page.open_playthrough_form(playthrough_index)
 
     def go_back_from_game(self) -> None:
         """Torna alla pagina da cui si era aperto il gioco, aggiornandola."""
