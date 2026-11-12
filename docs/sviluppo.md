@@ -5,7 +5,7 @@ Come installare, configurare e sviluppare Questlog, e le regole della libreria n
 ## Requisiti e avvio
 
 - Python 3.12 o superiore
-- Le librerie di `requirements.txt`: PySide6 per l'interfaccia, supabase per account e database, requests e python-dotenv per IGDB, pandas e matplotlib per le statistiche, pytest e mypy per lo sviluppo
+- Le librerie di `requirements.txt`: PySide6 per l'interfaccia, supabase per account, database e catalogo, requests e python-dotenv per configurazione e traduzioni, pandas e matplotlib per le statistiche, pytest e mypy per lo sviluppo
 
 ```bash
 python -m venv .venv
@@ -35,12 +35,13 @@ Il login con Google e la conferma dell'email riportano il browser su `http://loc
 
 ### Catalogo IGDB
 
-Il catalogo viene da [IGDB](https://www.igdb.com). Servono le credenziali di un'app registrata su [dev.twitch.tv](https://dev.twitch.tv/console):
+Il catalogo viene da [IGDB](https://www.igdb.com), ma l'app non lo chiama direttamente: passa dalla Edge Function `igdb` di Supabase (`supabase/functions/igdb/`), che ha le credenziali e risponde solo agli utenti con il login fatto. Così le chiavi IGDB non sono mai nell'app.
 
-1. Copia `.env.example` come `.env`.
-2. Inserisci `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET`.
+1. Registra un'app su [dev.twitch.tv](https://dev.twitch.tv/console) e prendi Client ID e Client Secret.
+2. Su Supabase, in **Edge Functions → Secrets**, aggiungi `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET`.
+3. Pubblica la funzione: `npx supabase functions deploy igdb --project-ref <progetto> --use-api`.
 
-Il file `.env` è escluso dal repository. Senza credenziali l'app usa un piccolo catalogo di prova.
+La funzione accetta solo cinque azioni (ricerca, tendenze, nuove uscite, in arrivo, dettagli) e costruisce lei le richieste a IGDB. Le immagini arrivano direttamente da `images.igdb.com`, che è pubblico. Senza Supabase configurato l'app usa un piccolo catalogo di prova.
 
 Le descrizioni di IGDB sono in inglese. Per vederle in italiano si può aggiungere nel `.env` una chiave dell'[API DeepL](https://www.deepl.com/pro-api) (`DEEPL_API_KEY`). Ogni descrizione viene tradotta una volta sola e salvata in cache.
 
@@ -51,7 +52,7 @@ Le descrizioni di IGDB sono in inglese. Per vederle in italiano si può aggiunge
 | `SUPABASE_ANON_KEY` (publishable) | `.env` e app | è pubblica per progetto: da sola non legge nessun dato, ci pensano login e RLS |
 | chiave *secret* / `service_role` di Supabase | **mai** nell'app né su GitHub | salta le regole RLS: chi l'ha legge e cancella i dati di tutti |
 | Client Secret di Google | solo nelle impostazioni di Supabase | il login con Google passa da Supabase, l'app non lo usa |
-| `IGDB_CLIENT_SECRET` | `.env`, per ora | da spostare in una Edge Function prima di distribuire l'app (Fase 7) |
+| `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET` | solo nei Secrets della Edge Function su Supabase | l'app chiama la funzione con il login dell'utente, mai IGDB direttamente |
 | `data/session.json` | solo sul tuo computer | contiene i token dell'account: equivale a una password |
 
 Tabelle e funzione sono accessibili solo agli utenti con il login fatto (`authenticated`), e le regole **RLS** fanno vedere a ognuno solo le proprie righe. `replace_library` gira con i permessi di chi la chiama (`security invoker`) e in un'unica transazione: o la libreria viene salvata tutta, o non cambia niente.
@@ -76,7 +77,7 @@ core/             logica pura, senza interfaccia, condivisa e testata
   cloud.py          Supabase: client, sessione, login con email e con Google
   cloud_repository.py  libreria nel database Supabase e controlli prima dell'invio
   catalog.py        catalogo dei giochi: interfaccia e versione di prova
-  igdb.py           catalogo IGDB
+  igdb.py           catalogo IGDB (tramite la Edge Function)
   platforms.py      nomi uniformi delle piattaforme
   csv_io.py         import ed export CSV
   wrapped.py        statistiche in stile Wrapped
@@ -84,7 +85,8 @@ core/             logica pura, senza interfaccia, condivisa e testata
   charts.py         grafici matplotlib (versione terminale)
   translation.py    traduzione delle descrizioni
 ui/               app desktop PySide6: pagine, widget, stile (style.qss), icone e font
-supabase/         schema del database (tabelle, RLS, funzioni) e aggiornamenti
+supabase/         schema del database (tabelle, RLS, funzioni), aggiornamenti
+  functions/igdb/   Edge Function in TypeScript che fa da intermediario verso IGDB
 terminal/         versione a riga di comando
 tests/            test con pytest
 ```

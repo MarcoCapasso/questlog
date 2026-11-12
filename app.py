@@ -4,11 +4,12 @@ import sys
 
 from PySide6.QtCore import QLocale
 from PySide6.QtWidgets import QApplication
+from supabase import Client
 
 from core.catalog import FakeCatalog, GameCatalog
 from core.cloud import AuthService, create_supabase_client
 from core.cloud_repository import SupabaseGameRepository
-from core.config import load_deepl_api_key, load_igdb_credentials, load_supabase_settings
+from core.config import load_deepl_api_key, load_supabase_settings
 from core.igdb import IgdbCatalog
 from core.repository import GameRepository, JsonGameRepository
 from core.translation import DeepLTranslator, NoTranslator, Translator
@@ -17,13 +18,20 @@ from ui.main_window import MainWindow
 from ui.theme import load_fonts, load_stylesheet
 
 
-def create_catalog() -> GameCatalog:
-    """Restituisce il catalogo IGDB se le credenziali sono nel file .env, altrimenti quello di prova."""
-    credentials = load_igdb_credentials()
-    if credentials is None:
+def create_supabase() -> Client | None:
+    """Restituisce il client Supabase se il progetto è configurato nel file .env, altrimenti None."""
+    settings = load_supabase_settings()
+    if settings is None:
+        return None
+    url, key = settings
+    return create_supabase_client(url, key)
+
+
+def create_catalog(client: Client | None) -> GameCatalog:
+    """Restituisce il catalogo IGDB (tramite la Edge Function di Supabase), oppure quello di prova senza Supabase."""
+    if client is None:
         return FakeCatalog()
-    client_id, client_secret = credentials
-    return IgdbCatalog(client_id, client_secret)
+    return IgdbCatalog(client)
 
 
 def create_translator() -> Translator:
@@ -34,16 +42,11 @@ def create_translator() -> Translator:
     return DeepLTranslator(api_key)
 
 
-def create_account() -> CloudAccount | None:
-    """Restituisce login e libreria online se Supabase è configurato nel file .env, altrimenti None.
+def create_account(client: Client) -> CloudAccount:
+    """Restituisce login e libreria online.
 
-    Login e libreria usano lo stesso client: dopo il login, le richieste al database partono già come quell'utente.
+    Login, libreria e catalogo usano lo stesso client: dopo il login, ogni richiesta parte già come quell'utente.
     """
-    settings = load_supabase_settings()
-    if settings is None:
-        return None
-    url, key = settings
-    client = create_supabase_client(url, key)
     return CloudAccount(AuthService(client), CloudLibrary(SupabaseGameRepository(client)))
 
 
@@ -54,9 +57,10 @@ def main() -> None:
     app.setStyle("Fusion")
     load_fonts()
     app.setStyleSheet(load_stylesheet())
-    account = create_account()
+    client = create_supabase()
+    account = create_account(client) if client is not None else None
     repository: GameRepository = account.library if account is not None else JsonGameRepository()
-    window = MainWindow(repository, create_catalog(), create_translator(), account)
+    window = MainWindow(repository, create_catalog(client), create_translator(), account)
     window.show()
     sys.exit(app.exec())
 
