@@ -3,9 +3,9 @@
 import math
 from datetime import datetime
 
-from display import print_library, print_playthroughs
-from library import is_valid_date_order, is_valid_rating, today_iso
-from models import Game
+from core.library import MAX_RATING, is_valid_date_order, is_valid_rating, today_iso
+from core.models import Game
+from terminal.display import print_library, print_playthroughs
 
 
 def ask_non_empty_text(prompt: str) -> str:
@@ -68,7 +68,7 @@ def ask_confirmation(prompt: str) -> bool:
 
 
 def ask_rating(prompt: str) -> float | None:
-    """Chiede un voto da 1 a 10 a mezzi punti; restituisce None se l'utente preme Invio."""
+    """Chiede un voto intero da 1 a MAX_RATING; restituisce None se l'utente preme Invio."""
     while True:
         rating_text = input(prompt).strip()
         if rating_text == "":
@@ -77,7 +77,7 @@ def ask_rating(prompt: str) -> float | None:
             rating = float(rating_text)
             if is_valid_rating(rating):
                 return rating
-            print("Il voto deve essere tra 1 e 10, intero o a mezzi punti (es. 7.5).")
+            print(f"Il voto deve essere un numero intero da 1 a {MAX_RATING}.")
         except ValueError:
             print("Inserisci un numero.")
 

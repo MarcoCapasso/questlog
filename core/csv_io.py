@@ -3,17 +3,28 @@
 import csv
 import math
 from datetime import date, datetime
+from pathlib import Path
 
-from library import PLAYTHROUGH_STATUSES, find_game_index_by_title, is_valid_date_order, is_valid_rating
-from models import Game, Playthrough
+from core.library import (
+    MAX_RATING,
+    PLAYTHROUGH_STATUSES,
+    find_game_index_by_title,
+    is_valid_date_order,
+    is_valid_rating,
+)
+from core.models import Game, Playthrough
+from core.platforms import normalize_platform
+from core.storage import DATA_DIR
 
-CSV_FIELDS = ["title", "rating", "platform", "status", "hours_played", "start_date", "completion_date"]
-CSV_FILE = "questlog_export.csv"
+REQUIRED_FIELDS = ["title", "rating", "platform", "status", "hours_played", "start_date", "completion_date"]
+CSV_FIELDS = REQUIRED_FIELDS + ["notes", "igdb_id", "cover_url"]
+CSV_FILE = DATA_DIR / "questlog_export.csv"
 
 
-def export_csv(games: list[Game]) -> None:
-    """Scrive la libreria nel file CSV, una riga per partita."""
-    with open(CSV_FILE, "w", newline="", encoding="utf-8-sig") as file:
+def export_csv(games: list[Game], path: Path = CSV_FILE) -> None:
+    """Scrive la libreria nel file CSV indicato, una riga per partita."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8-sig") as file:
         writer = csv.DictWriter(file, fieldnames=CSV_FIELDS, delimiter=";")
         writer.writeheader()
         writer.writerows(games_to_rows(games))
@@ -23,25 +34,36 @@ def games_to_rows(games: list[Game]) -> list[dict]:
     """Restituisce una riga per partita; i giochi in backlog occupano una riga senza dati di partita."""
     rows = []
     for game in games:
+        game_cells = {
+            "title": game.title,
+            "rating": game.rating,
+            "igdb_id": game.igdb_id,
+            "cover_url": game.cover_url,
+        }
         if len(game.playthroughs) == 0:
-            rows.append({"title": game.title, "rating": game.rating})
+            rows.append(dict(game_cells))
         for playthrough in game.playthroughs:
-            row = {"title": game.title, "rating": game.rating}
+            row = dict(game_cells)
             row["platform"] = playthrough.platform
             row["status"] = playthrough.status
             row["hours_played"] = playthrough.hours_played
             row["start_date"] = playthrough.start_date
             row["completion_date"] = playthrough.completion_date
+            row["notes"] = playthrough.notes
             rows.append(row)
     return rows
 
 
-def import_csv(today: str) -> list[Game]:
-    """Legge il file CSV e restituisce i giochi; solleva ValueError se il file non è valido."""
-    with open(CSV_FILE, "r", newline="", encoding="utf-8-sig") as file:
+def import_csv(today: str, path: Path = CSV_FILE) -> list[Game]:
+    """Legge il file CSV indicato e restituisce i giochi; solleva ValueError se il file non è valido.
+
+    Le colonne "notes", "igdb_id" e "cover_url" sono facoltative,
+    così si possono ancora importare i CSV esportati dalle versioni precedenti.
+    """
+    with open(path, "r", newline="", encoding="utf-8-sig") as file:
         reader = csv.DictReader(file, delimiter=";")
-        if reader.fieldnames is None or not set(CSV_FIELDS).issubset(reader.fieldnames):
-            raise ValueError(f"Intestazione non valida: servono le colonne {', '.join(CSV_FIELDS)}.")
+        if reader.fieldnames is None or not set(REQUIRED_FIELDS).issubset(reader.fieldnames):
+            raise ValueError(f"Intestazione non valida: servono le colonne {', '.join(REQUIRED_FIELDS)}.")
         return rows_to_games(list(reader), today)
 
 
@@ -65,7 +87,8 @@ def add_row_to_games(games: list[Game], row: dict, today: str) -> None:
 
     game_index = find_game_index_by_title(games, title)
     if game_index is None:
-        game = Game(title, rating)
+        igdb_id = parse_igdb_id(read_cell(row, "igdb_id"))
+        game = Game(title, rating, igdb_id=igdb_id, cover_url=read_cell(row, "cover_url") or None)
         games.append(game)
     else:
         game = games[game_index]
@@ -98,7 +121,18 @@ def row_to_playthrough(row: dict, today: str) -> Playthrough:
     if not is_valid_date_order(start_date, completion_date):
         raise ValueError("la data di completamento precede la data di inizio.")
 
-    return Playthrough(read_cell(row, "platform"), status, hours_played, start_date, completion_date)
+    notes = read_cell(row, "notes")
+    platform = normalize_platform(read_cell(row, "platform"))
+    return Playthrough(platform, status, hours_played, start_date, completion_date, notes)
+
+
+def parse_igdb_id(text: str) -> int | None:
+    """Converte l'id IGDB della cella; None se la cella è vuota."""
+    if text == "":
+        return None
+    if not text.isdigit():
+        raise ValueError(f"id IGDB '{text}' non valido.")
+    return int(text)
 
 
 def read_cell(row: dict, field: str) -> str:
@@ -126,7 +160,7 @@ def parse_rating(text: str) -> float | None:
         return None
     rating = parse_number(text)
     if not is_valid_rating(rating):
-        raise ValueError(f"voto '{text}' non valido (da 1 a 10, interi o mezzi punti).")
+        raise ValueError(f"voto '{text}' non valido (intero da 1 a {MAX_RATING}).")
     return rating
 
 

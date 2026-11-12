@@ -1,0 +1,29 @@
+"""Impostazioni lette dal file .env, che resta sul tuo PC e non finisce mai su GitHub."""
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+ENV_FILE = Path(".env")
+
+
+def read_setting(name: str) -> str | None:
+    """Restituisce il valore di un'impostazione del file .env, oppure None se manca o è vuota."""
+    load_dotenv(ENV_FILE)
+    value = os.getenv(name, "").strip()
+    return value if value != "" else None
+
+
+def load_igdb_credentials() -> tuple[str, str] | None:
+    """Restituisce Client ID e Client Secret di IGDB, oppure None se non sono configurati."""
+    client_id = read_setting("IGDB_CLIENT_ID")
+    client_secret = read_setting("IGDB_CLIENT_SECRET")
+    if client_id is None or client_secret is None:
+        return None
+    return client_id, client_secret
+
+
+def load_deepl_api_key() -> str | None:
+    """Restituisce la chiave di DeepL per tradurre le descrizioni, oppure None se non è configurata."""
+    return read_setting("DEEPL_API_KEY")

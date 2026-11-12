@@ -1,7 +1,7 @@
 import pytest
 
-from csv_io import export_csv, games_to_rows, import_csv, rows_to_games
-from models import Game, Playthrough
+from core.csv_io import export_csv, games_to_rows, import_csv, rows_to_games
+from core.models import Game, Playthrough
 
 
 TODAY = "2026-03-20"
@@ -9,13 +9,13 @@ TODAY = "2026-03-20"
 
 def make_row(**cells: str) -> dict:
     row = {"title": "Hades", "rating": "", "platform": "PC", "status": "playing",
-           "hours_played": "10", "start_date": "", "completion_date": ""}
+           "hours_played": "10", "start_date": "", "completion_date": "", "notes": ""}
     row.update(cells)
     return row
 
 
 def test_games_to_rows_writes_one_row_per_playthrough():
-    game = Game("Hades", 9, [Playthrough("PC", "completed", 40), Playthrough("Switch", "playing", 5)])
+    game = Game("Hades", 4, [Playthrough("PC", "completed", 40), Playthrough("Switch", "playing", 5)])
 
     rows = games_to_rows([game])
 
@@ -62,7 +62,7 @@ def test_import_error_reports_line_number():
 
 
 def test_import_rejects_different_ratings_for_same_game():
-    rows = [make_row(rating="8"), make_row(rating="9", platform="Switch")]
+    rows = [make_row(rating="3"), make_row(rating="4", platform="Switch")]
 
     with pytest.raises(ValueError, match="voti diversi"):
         rows_to_games(rows, TODAY)
@@ -70,7 +70,7 @@ def test_import_rejects_different_ratings_for_same_game():
 
 def test_import_rejects_rating_on_backlog_game():
     with pytest.raises(ValueError, match="non può avere un voto"):
-        rows_to_games([make_row(rating="8", platform="")], TODAY)
+        rows_to_games([make_row(rating="4", platform="")], TODAY)
 
 
 def test_import_rejects_future_date():
@@ -81,11 +81,41 @@ def test_import_rejects_future_date():
 def test_export_then_import_returns_same_library(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     games = [
-        Game("Zelda: Ocarina of Time; Master Quest", 9.5,
-             [Playthrough("Switch", "completed", 30, "2026-01-01", "2026-02-01")]),
+        Game("Zelda: Ocarina of Time; Master Quest", 5,
+             [Playthrough("Nintendo Switch", "completed", 30, "2026-01-01", "2026-02-01")]),
         Game("Celeste"),
     ]
 
     export_csv(games)
 
     assert import_csv(TODAY) == games
+
+
+def test_notes_column_is_optional_and_read_when_present():
+    old_row = make_row()
+    del old_row["notes"]
+
+    games = rows_to_games([old_row, make_row(title="Celeste", notes="solo storia")], TODAY)
+
+    assert games[0].playthroughs[0].notes == ""
+    assert games[1].playthroughs[0].notes == "solo storia"
+
+
+def test_import_normalizes_platform_names():
+    games = rows_to_games([make_row(platform="ps4")], TODAY)
+
+    assert games[0].playthroughs[0].platform == "PlayStation 4"
+
+
+def test_export_and_import_keep_igdb_link(tmp_path):
+    path = tmp_path / "libreria.csv"
+    games = [Game("Celeste", igdb_id=7, cover_url="https://cover.jpg")]
+
+    export_csv(games, path)
+
+    assert import_csv(TODAY, path) == games
+
+
+def test_invalid_igdb_id_is_rejected():
+    with pytest.raises(ValueError, match="id IGDB"):
+        rows_to_games([make_row(igdb_id="abc")], TODAY)
