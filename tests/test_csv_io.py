@@ -105,3 +105,17 @@ def test_import_normalizes_platform_names():
     games = rows_to_games([make_row(platform="ps4")], TODAY)
 
     assert games[0].playthroughs[0].platform == "PlayStation 4"
+
+
+def test_export_and_import_keep_igdb_link(tmp_path):
+    path = tmp_path / "libreria.csv"
+    games = [Game("Celeste", igdb_id=7, cover_url="https://cover.jpg")]
+
+    export_csv(games, path)
+
+    assert import_csv(TODAY, path) == games
+
+
+def test_invalid_igdb_id_is_rejected():
+    with pytest.raises(ValueError, match="id IGDB"):
+        rows_to_games([make_row(igdb_id="abc")], TODAY)

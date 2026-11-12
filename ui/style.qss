@@ -769,3 +769,37 @@ QProgressBar#platformBar::chunk {
     background-color: #0B1A2E;
     border-radius: 5px;
 }
+
+/* Profilo e dati */
+
+QToolButton#avatarButton {
+    background-color: #1C2024;
+    border: 1px solid #2A2F35;
+    border-radius: 20px;
+}
+
+QToolButton#avatarButton:hover {
+    background-color: #252A30;
+    border: 1px solid #4A5058;
+}
+
+QToolButton#avatarButton::menu-indicator {
+    image: none;
+    width: 0px;
+}
+
+QLabel#successMessage {
+    color: #8FE0A8;
+    font-weight: 600;
+}
+
+QFrame#importPreview {
+    background-color: #1C2024;
+    border: 1px solid #6A2E2E;
+    border-radius: 10px;
+}
+
+QLabel#previewText {
+    font-size: 14px;
+    font-weight: 600;
+}

@@ -15,11 +15,14 @@ from PySide6.QtWidgets import (
 from core.catalog import CatalogGame, GameCatalog
 from core.models import Game
 from core.repository import GameRepository
-from core.translation import Translator
+from core.translation import NoTranslator, Translator
+from ui.avatar import AvatarButton
 from ui.catalog_page import CatalogPage
+from ui.data_page import DataPage
 from ui.game_page import GamePage
 from ui.home_page import HomePage
 from ui.library_page import LibraryPage
+from ui.settings_page import SettingsPage
 from ui.statistics_page import StatisticsPage
 
 HOME_NAV_INDEX = 0
@@ -40,6 +43,10 @@ class MainWindow(QMainWindow):
         self.home_page = HomePage(repository, catalog)
         self.library_page = LibraryPage(repository)
         self.statistics_page = StatisticsPage(repository)
+        self.settings_page = SettingsPage(catalog.is_demo, not isinstance(translator, NoTranslator))
+        self.data_page = DataPage(repository)
+        self.data_page.library_replaced.connect(self.library_page.refresh)
+        self.data_page.library_replaced.connect(self.home_page.refresh)
         self.catalog_page = CatalogPage(catalog, repository)
         self.game_page = GamePage(repository, catalog, translator)
         self.page_before_game: QWidget = self.library_page
@@ -81,8 +88,12 @@ class MainWindow(QMainWindow):
             header_layout.addWidget(button)
             self.pages.addWidget(page)
         header_layout.addStretch()
-        self.pages.addWidget(self.catalog_page)
-        self.pages.addWidget(self.game_page)
+        self.avatar = AvatarButton()
+        self.avatar.settings_requested.connect(lambda: self.show_page(self.settings_page))
+        self.avatar.data_requested.connect(self.show_data_page)
+        header_layout.addWidget(self.avatar)
+        for extra_page in (self.catalog_page, self.game_page, self.settings_page, self.data_page):
+            self.pages.addWidget(extra_page)
 
         self.nav_buttons.idClicked.connect(self.show_nav_page)
         self.nav_buttons.button(HOME_NAV_INDEX).setChecked(True)
@@ -99,13 +110,24 @@ class MainWindow(QMainWindow):
     def show_page(self, page: QWidget) -> None:
         """Mostra una pagina ed evidenzia il bottone in alto giusto.
 
-        Catalogo e gioco non hanno un bottone: il gioco evidenzia quello della pagina da cui è stato aperto,
-        il catalogo quello della Libreria.
+        Il gioco evidenzia il bottone della pagina da cui è stato aperto, il catalogo quello della Libreria.
+        Impostazioni e dati si aprono dall'avatar: nessun bottone resta evidenziato.
         """
         self.pages.setCurrentWidget(page)
+        if page in (self.settings_page, self.data_page):
+            self.nav_buttons.setExclusive(False)
+            for button in self.nav_buttons.buttons():
+                button.setChecked(False)
+            self.nav_buttons.setExclusive(True)
+            return
         section = self.page_before_game if page is self.game_page else page
         nav_index = HOME_NAV_INDEX if section is self.home_page else LIBRARY_NAV_INDEX
         self.nav_buttons.button(nav_index).setChecked(True)
+
+    def show_data_page(self) -> None:
+        """Apre la pagina di import ed export, ripulita da messaggi vecchi."""
+        self.data_page.start()
+        self.show_page(self.data_page)
 
     def show_nav_page(self, nav_index: int) -> None:
         """Mostra la pagina del bottone cliccato in alto; Home e Statistiche si aggiornano prima di comparire."""
