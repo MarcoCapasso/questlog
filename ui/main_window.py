@@ -1,7 +1,7 @@
 """Finestra principale di Questlog."""
 
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtCore import QEvent, Qt, QTimer
+from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -138,6 +138,14 @@ class MainWindow(QMainWindow):
         self.avatar.logout_requested.connect(self.start_logout)
         self.avatar.set_login_available(account is not None)
         header_layout.addWidget(self.avatar)
+        # Schermo intero: dal menu dell'avatar o con F11; Esc ne esce.
+        # L'azione va aggiunta anche alla finestra, altrimenti F11 funzionerebbe solo a menu aperto.
+        self.addAction(self.avatar.fullscreen_action)
+        self.avatar.fullscreen_action.toggled.connect(self.set_fullscreen)
+        self.exit_fullscreen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        self.exit_fullscreen_shortcut.activated.connect(lambda: self.set_fullscreen(False))
+        self.exit_fullscreen_shortcut.setEnabled(False)
+        self.was_maximized = False
         extra_pages = (
             self.catalog_page,
             self.game_page,
@@ -167,6 +175,26 @@ class MainWindow(QMainWindow):
         central_layout.addWidget(header)
         central_layout.addWidget(self.pages)
         self.setCentralWidget(central)
+
+    def set_fullscreen(self, fullscreen: bool) -> None:
+        """Entra o esce dallo schermo intero; uscendo torna com'era prima (ingrandita o no)."""
+        if fullscreen == self.isFullScreen():
+            return
+        if fullscreen:
+            self.was_maximized = self.isMaximized()
+            self.showFullScreen()
+        elif self.was_maximized:
+            self.showMaximized()
+        else:
+            self.showNormal()
+
+    def changeEvent(self, event: QEvent) -> None:
+        """Tiene allineati la spunta nel menu e il tasto Esc con lo stato reale della finestra."""
+        if event.type() == QEvent.Type.WindowStateChange:
+            fullscreen = self.isFullScreen()
+            self.avatar.fullscreen_action.setChecked(fullscreen)
+            self.exit_fullscreen_shortcut.setEnabled(fullscreen)
+        super().changeEvent(event)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Alla chiusura: smette di aspettare il browser e salva online le ultime modifiche."""
