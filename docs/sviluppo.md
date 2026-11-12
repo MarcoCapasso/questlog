@@ -43,6 +43,13 @@ Il catalogo viene da [IGDB](https://www.igdb.com), ma l'app non lo chiama dirett
 
 La funzione accetta solo cinque azioni (ricerca, tendenze, nuove uscite, in arrivo, dettagli) e costruisce lei le richieste a IGDB. Le immagini arrivano direttamente da `images.igdb.com`, che è pubblico. Senza Supabase configurato l'app usa un piccolo catalogo di prova.
 
+**Limiti da tenere a mente**
+
+- IGDB accetta al massimo 4 richieste al secondo e 8 aperte insieme, per tutta l'app (cioè per tutti gli utenti insieme). Se risponde 429, la funzione aspetta un secondo e riprova una volta; se va male di nuovo, l'app mostra "riprova tra qualche secondo".
+- Il token di Twitch resta in memoria finché la funzione è accesa: dopo un po' di inattività la funzione si spegne e al primo uso ne chiede uno nuovo.
+- Il piano gratuito di Supabase comprende 500.000 chiamate alle Edge Function al mese, e mette in pausa i progetti inattivi da una settimana: si riattivano dal dashboard.
+- Per provare le regole della funzione: `npx deno test supabase/functions/igdb`.
+
 Le descrizioni di IGDB sono in inglese. Per vederle in italiano si può aggiungere nel `.env` una chiave dell'[API DeepL](https://www.deepl.com/pro-api) (`DEEPL_API_KEY`). Ogni descrizione viene tradotta una volta sola e salvata in cache.
 
 ### Sicurezza: quali chiavi vanno dove
